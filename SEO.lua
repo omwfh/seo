@@ -36,7 +36,7 @@ Notify = function(Text: string): nil
         StarterGui:SetCore("SendNotification", {
             Title = "SEO",
             Text = Text,
-            Duration = 10
+            Duration = 5
         })
     end)
 end
@@ -76,7 +76,7 @@ GetPlaceName = function(): string
     
     if success and info then
         local name = info:gsub("%b[]", ""):gsub("[^%w%s]", ""):gsub("%s+", "_"):lower():gsub("^_+", "")
-        print("[SEO] Detected Place Name:", name)
+        print("[SEO] Detected Place Name: ", name)
         return name
     end
     
@@ -98,14 +98,14 @@ local Connection: RBXScriptConnection?
 Connection = RunService.Heartbeat:Connect(function()
     if Executed then return end
     if PlaceName and tonumber(PlaceName) then
-    Notify("[SEO] Using Game ID for script lookup...")
+        Notify("[SEO] Using Game-ID for detection...")
         Code = SafeHttpGet("https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/gameid/" .. PlaceName .. ".lua")
     else
         Code = SafeHttpGet("https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/games/" .. PlaceName .. ".lua")
     end
     
     if Code and type(Code) == "string" and Code ~= "" and not Executed then
-        Notify("[SEO] Game script found! Loading now...")
+        Notify("[SEO] Game found!")
         getgenv().HandleSEO(Code)
         Executed = true
         if Connection then Connection:Disconnect() end

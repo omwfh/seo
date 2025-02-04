@@ -117,9 +117,9 @@ Connection = RunService.Heartbeat:Connect(function()
     end
 
     if (not Code or Code == "") and not Executed then
-    Notify("[SEO] No game-specific script found, loading universal fallback...")
-        print("[SEO] No game-specific script found, loading universal.")
+        Notify("[SEO] No game-specific script found, loading universal fallback...")
         Code = SafeHttpGet("https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/games/universal.lua")
+        getgenv().HandleSEO(Code)
         if Connection then Connection:Disconnect() end
     end
 end)

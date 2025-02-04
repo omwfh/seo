@@ -8,11 +8,12 @@
 ░▒▓███████▓▒░░▒▓████████▓▒░▒▓██████▓▒░  
                                         
  SEO: Loader
+ 
+ VERSION: 1.7
+ 
+ Description: Loader to game scripts
 
- Version: 1.6
-
- IN BETA
- GAMES NOT FULLY ADDED
+ ! GAMES NOT FULLY DONE !
  
  Features:
  - Safe HTTP requests
@@ -28,18 +29,16 @@ local RunService: RunService = game:GetService("RunService")
 local MarketplaceService: MarketplaceService = game:GetService("MarketplaceService")
 local StarterGui: StarterGui = game:GetService("StarterGui")
 
-local extraScripts = ParallelFetch("https://raw.githubusercontent.com/example/extra1.lua", "https://raw.githubusercontent.com/example/extra2.lua")
+local extraScripts = {}
 
 Notify = function(Text: string): nil
     pcall(function()
         StarterGui:SetCore("SendNotification", {
             Title = "SEO",
             Text = Text,
-            Duration = 5
+            Duration = 10
         })
-    end
-
-ExecuteLoader()
+    end)
 end
 
 SafeHttpGet = function(url: string): string?
@@ -96,7 +95,8 @@ local Code: string? = nil
 local Executed = false
 local Connection: RBXScriptConnection?
 
-local function ExecuteLoader()
+Connection = RunService.Heartbeat:Connect(function()
+    if Executed then return end
     if PlaceName and tonumber(PlaceName) then
     Notify("[SEO] Using Game ID for script lookup...")
         Code = SafeHttpGet("https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/gameid/" .. PlaceName .. ".lua")
@@ -108,7 +108,7 @@ local function ExecuteLoader()
         Notify("[SEO] Game script found! Loading now...")
         getgenv().HandleSEO(Code)
         Executed = true
-        
+        if Connection then Connection:Disconnect() end
     end
     
     if extraScripts and type(extraScripts) == "table" then
@@ -117,9 +117,9 @@ local function ExecuteLoader()
     end
 
     if (not Code or Code == "") and not Executed then
-        Notify("[SEO] No game-specific script found, loading universal fallback...")
+    Notify("[SEO] No game-specific script found, loading universal fallback...")
+        print("[SEO] No game-specific script found, loading universal.")
         Code = SafeHttpGet("https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/games/universal.lua")
-        getgenv().HandleSEO(Code)
         if Connection then Connection:Disconnect() end
     end
 end)

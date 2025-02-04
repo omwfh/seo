@@ -107,11 +107,18 @@ local function ExecuteLoader()
     end
 
     if (not Code or Code == "") and not Executed then
-        Notify("[SEO] No game-specific script found, loading universal fallback...")
-        Code = SafeHttpGet("https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/games/universal.lua")
+    Notify("[SEO] Game not found, loading universal fallback...")
+    Code = SafeHttpGet("https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/games/universal.lua")
+
+    if Code and Code ~= "" then
         getgenv().HandleSEO(Code)
-        if Connection then Connection:Disconnect() end
+        Executed = true
+    else
+        warn("[SEO] Failed to load universal script!")
     end
+
+    if Connection then Connection:Disconnect() end
+end
 end
 
 getgenv().HandleSEO = function(scriptCode: string): nil

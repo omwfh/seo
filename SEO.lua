@@ -91,8 +91,10 @@ getgenv().PlaceFileName = PlaceName
 
 local Code: string?
 local Connection: RBXScriptConnection?
+local Executed = false
 
 Connection = RunService.Heartbeat:Connect(function()
+    if Executed then return end
     if PlaceName and tonumber(PlaceName) then
         Notify("[SEO] Using Game-ID detection...")
         Code = SafeHttpGet("https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/gameid/" .. PlaceName .. ".lua")

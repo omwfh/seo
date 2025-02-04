@@ -106,20 +106,20 @@ Connection = RunService.Heartbeat:Connect(function()
         if Connection then Connection:Disconnect() end
     end
 
-    local extraScripts = ParallelFetch(
-        "";
-    )
+    local extraScripts = {}
     
     if extraScripts and type(extraScripts) == "table" then
-    for _, scriptCode in pairs(extraScripts) do
-        Notify("[SEO] Loading necessary scripts...")
-        task.wait(1)
-        getgenv().HandleSEO(scriptCode)
+        for _, scriptCode in pairs(extraScripts) do
+            Notify("[SEO] Loading necessary scripts...")
+            task.wait(1)
+            getgenv().HandleSEO(scriptCode)
+        end
     end
 
     if not Code or Code == "" then
         Notify("[SEO] No game-specific script found, loading universal fallback...")
         Code = SafeHttpGet("https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/games/universal.lua")
+        getgenv().HandleSEO(Code)
         if Connection then Connection:Disconnect() end
     end
 end)

@@ -19,7 +19,7 @@
  - Advanced script handling
 ]]
 
-wait(5)
+if not game:IsLoaded() then game.Loaded:Wait() end
 
 local getgenv: () -> ({[string]: any}) = getfenv().getgenv
 local HttpService: HttpService = game:GetService("HttpService")

@@ -8,17 +8,8 @@
 ░▒▓███████▓▒░░▒▓████████▓▒░▒▓██████▓▒░  
                                         
  SEO: Loader
- 
- VERSION: 1.7
 
- ! GAMES NOT FULLY DONE !
- 
- Features:
- - Safe HTTP requests
- - Optimized place name detection
- - Parallel script execution
- - Parallel script fetching
- - Advanced script handling
+ Version: 1.8
 ]]
 
 if not game:IsLoaded() then game.Loaded:Wait() end
@@ -38,7 +29,7 @@ Notify = function(Text: string): nil
             Text = Text,
             Duration = 5
         })
-    end)
+    end
 end
 
 SafeHttpGet = function(url: string): string?
@@ -76,7 +67,7 @@ GetPlaceName = function(): string
     
     if success and info then
         local name = info:gsub("%b[]", ""):gsub("[^%w%s]", ""):gsub("%s+", "_"):lower():gsub("^_+", "")
-        print("[SEO] Detected Place Name: ", name)
+        print("[SEO] Detected Place Name:", name)
         return name
     end
     
@@ -95,10 +86,9 @@ local Code: string? = nil
 local Executed = false
 local Connection: RBXScriptConnection?
 
-Connection = RunService.Heartbeat:Connect(function()
-    if Executed then return end
+local function ExecuteLoader()
     if PlaceName and tonumber(PlaceName) then
-        Notify("[SEO] Using Game-ID for detection...")
+    Notify("[SEO] Using Game-ID for detection...")
         Code = SafeHttpGet("https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/gameid/" .. PlaceName .. ".lua")
     else
         Code = SafeHttpGet("https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/games/" .. PlaceName .. ".lua")
@@ -108,7 +98,6 @@ Connection = RunService.Heartbeat:Connect(function()
         Notify("[SEO] Game found!")
         getgenv().HandleSEO(Code)
         Executed = true
-        if Connection then Connection:Disconnect() end
     end
     
     if extraScripts and type(extraScripts) == "table" then
@@ -142,7 +131,6 @@ getgenv().HandleSEO = function(scriptCode: string): nil
     ExecuteScript = function()
         local success, runError = pcall(scriptFunction)
         local executionTime: number = (tick() - startTime) * 1000
-
         if success then
             Notify(('[SEO] Script executed successfully in %.2f ms.'):format(executionTime))
         else
@@ -153,3 +141,5 @@ getgenv().HandleSEO = function(scriptCode: string): nil
     local thread: thread = coroutine.create(ExecuteScript)
     coroutine.resume(thread)
 end
+
+ExecuteLoader()

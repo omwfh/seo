@@ -10,8 +10,6 @@
  SEO: Loader
  
  VERSION: 1.7
- 
- Description: Loader to game scripts
 
  ! GAMES NOT FULLY DONE !
  
@@ -22,6 +20,8 @@
  - Parallel script fetching
  - Advanced script handling
 ]]
+
+if not game:IsLoaded() then game.Loaded:Wait() end
 
 local getgenv: () -> ({[string]: any}) = getfenv().getgenv
 local HttpService: HttpService = game:GetService("HttpService")

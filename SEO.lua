@@ -2,7 +2,7 @@
     █▀█ █▀█ █▀▀ █
     █▀▀ █▀▄ ██▄ █
     
-    Advanced FrostByte Script Loader
+    SEO Loader
     Features: Safe HTTP requests, Optimized place name detection, Advanced script execution.
 ]]
     

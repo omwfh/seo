@@ -9,7 +9,10 @@
                                         
  SEO: Loader
 
- Version: 1.5
+ Version: 1.6
+
+ IN BETA
+ GAMES NOT FULLY ADDED
  
  Features:
  - Safe HTTP requests
@@ -19,25 +22,25 @@
  - Advanced script handling
 ]]
 
-if not game:IsLoaded() then game.Loaded:Wait() end
-
 local getgenv: () -> ({[string]: any}) = getfenv().getgenv
 local HttpService: HttpService = game:GetService("HttpService")
 local RunService: RunService = game:GetService("RunService")
 local MarketplaceService: MarketplaceService = game:GetService("MarketplaceService")
 local StarterGui: StarterGui = game:GetService("StarterGui")
 
+local extraScripts = ParallelFetch("https://raw.githubusercontent.com/example/extra1.lua", "https://raw.githubusercontent.com/example/extra2.lua")
+
 Notify = function(Text: string): nil
     pcall(function()
         StarterGui:SetCore("SendNotification", {
             Title = "SEO",
             Text = Text,
-            Duration = 10
+            Duration = 5
         })
-    end)
-end
+    end
 
-Notify("SEO: Loaded")
+ExecuteLoader()
+end
 
 SafeHttpGet = function(url: string): string?
     local success, response = pcall(game.HttpGet, game, url)
@@ -83,42 +86,37 @@ GetPlaceName = function(): string
 end
 
 Notify("[SEO] Fetching game details...")
-task.wait(1.5)
+task.wait(1)
 local PlaceName: string = GetPlaceName()
 Notify("[SEO] Detected game: " .. PlaceName)
-task.wait(.5)
+task.wait(1)
 getgenv().PlaceFileName = PlaceName
 
-local Code: string?
-local Connection: RBXScriptConnection?
+local Code: string? = nil
 local Executed = false
+local Connection: RBXScriptConnection?
 
-Connection = RunService.Heartbeat:Connect(function()
-    if Executed then return end
+local function ExecuteLoader()
     if PlaceName and tonumber(PlaceName) then
-        Notify("[SEO] Using Game-ID detection...")
+    Notify("[SEO] Using Game ID for script lookup...")
         Code = SafeHttpGet("https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/gameid/" .. PlaceName .. ".lua")
     else
         Code = SafeHttpGet("https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/games/" .. PlaceName .. ".lua")
     end
     
-    if Code and type(Code) == "string" and Code ~= "" then
-        Notify("[SEO] Game found!")
+    if Code and type(Code) == "string" and Code ~= "" and not Executed then
+        Notify("[SEO] Game script found! Loading now...")
         getgenv().HandleSEO(Code)
-        if Connection then Connection:Disconnect() end
+        Executed = true
+        
     end
-
-    local extraScripts = {}
     
     if extraScripts and type(extraScripts) == "table" then
-        for _, scriptCode in pairs(extraScripts) do
-            Notify("[SEO] Loading necessary scripts...")
-            task.wait(1)
-            getgenv().HandleSEO(scriptCode)
-        end
+    for _, scriptCode in pairs(extraScripts) do
+        getgenv().HandleSEO(scriptCode)
     end
 
-    if not Code or Code == "" then
+    if (not Code or Code == "") and not Executed then
         Notify("[SEO] No game-specific script found, loading universal fallback...")
         Code = SafeHttpGet("https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/games/universal.lua")
         getgenv().HandleSEO(Code)

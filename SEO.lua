@@ -8,10 +8,6 @@
 ░▒▓███████▓▒░░▒▓████████▓▒░▒▓██████▓▒░  
                                         
  SEO: Loader
- 
- Author: You (Owner)
- 
- Description: A highly optimized script loader for seamless execution.
 
  Version: 1.3
  
@@ -31,7 +27,7 @@ local StarterGui: StarterGui = game:GetService("StarterGui")
 
 local extraScripts = ParallelFetch("https://raw.githubusercontent.com/example/extra1.lua", "https://raw.githubusercontent.com/example/extra2.lua")
 
-local function Notify(Text: string): nil
+Notify = function(Text: string): nil
     pcall(function()
         StarterGui:SetCore("SendNotification", {
             Title = "SEO",
@@ -41,12 +37,12 @@ local function Notify(Text: string): nil
     end)
 end
 
-local function SafeHttpGet(url: string): string?
+SafeHttpGet = function(url: string): string?
     local success, response = pcall(game.HttpGet, game, url)
     return success and response ~= "ERROR" and response ~= "404: Not Found" and response or nil
 end
 
-local function ParallelFetch(...: string): table
+ParallelFetch = function(...: string): table
     local urls: {string} = {...}
     local results: {[string]: string} = {}
     local threads: {thread} = {}
@@ -69,7 +65,7 @@ local function ParallelFetch(...: string): table
     return results
 end
 
-local function GetPlaceName(): string
+GetPlaceName = function(): string
     local success, info = pcall(function()
         return MarketplaceService:GetProductInfo(game.PlaceId).Name
     end)
@@ -91,18 +87,23 @@ local Code: string?
 local Connection: RBXScriptConnection?
 
 Connection = RunService.Heartbeat:Connect(function()
-    if tonumber(PlaceName) then
+    if PlaceName and tonumber(PlaceName) then
         Code = SafeHttpGet("https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/gameid/" .. PlaceName .. ".lua")
     else
         Code = SafeHttpGet("https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/games/" .. PlaceName .. ".lua")
     end
     
-    if Code and Code ~= "" then
+    if Code and type(Code) == "string" and Code ~= "" then
         Notify("Game found, loading script.")
         getgenv().HandleSEO(Code)
         if Connection then Connection:Disconnect() end
     end
+
+    local extraScripts = ParallelFetch(
+        "";
+    )
     
+    if extraScripts and type(extraScripts) == "table" then
     for _, scriptCode in pairs(extraScripts) do
         getgenv().HandleSEO(scriptCode)
     end
@@ -122,14 +123,14 @@ getgenv().HandleSEO = function(scriptCode: string): nil
     end
 
     local startTime: number = tick()
-    local scriptFunction, loadError = loadstring(scriptCode)
+    local scriptFunction, loadError = scriptCode and loadstring(scriptCode) or nil
     
     if not scriptFunction then
         warn("[SEO] Failed to compile script:", loadError)
         return
     end
 
-    local function ExecuteScript()
+    ExecuteScript = function()
         local success, runError = pcall(scriptFunction)
         local executionTime: number = (tick() - startTime) * 1000
 

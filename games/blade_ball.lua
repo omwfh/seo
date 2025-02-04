@@ -4,8 +4,8 @@ local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local Vim = game:GetService("VirtualInputManager")
-local ballFolder = Workspace.Balls
-local trainingFolder = Workspace.TrainingBalls
+local ballFolder = Workspace:WaitForChild("Balls")
+local trainingFolder = Workspace:WaitForChild("TrainingBalls")
 
 local pressCooldown = 0
 local lastPressTime = {}

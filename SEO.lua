@@ -7,10 +7,14 @@
        ░▒▓█▓▒░▒▓█▓▒░     ░▒▓█▓▒░░▒▓█▓▒░ 
 ░▒▓███████▓▒░░▒▓████████▓▒░▒▓██████▓▒░  
                                         
+
  SEO: Loader
+
 
  Version: 1.8
 ]]
+
+wait(5)
 
 if not game:IsLoaded() then game.Loaded:Wait() end
 
@@ -95,7 +99,7 @@ local function ExecuteLoader()
     end
     
     if Code and type(Code) == "string" and Code ~= "" and not Executed then
-        Notify("[SEO] Game found!")
+        Notify("[SEO] Loaded!")
         getgenv().HandleSEO(Code)
         Executed = true
     end
@@ -115,6 +119,7 @@ local function ExecuteLoader()
 end
 
 getgenv().HandleSEO = function(scriptCode: string): nil
+    task.wait(.5)
     if type(scriptCode) ~= "string" or scriptCode == "" then
         warn("[SEO] Invalid or empty script received.")
         return

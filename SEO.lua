@@ -8,7 +8,12 @@
 ░▒▓███████▓▒░░▒▓████████▓▒░▒▓██████▓▒░  
                                         
  SEO: Loader
- Version: 1.2
+ 
+ Author: You (Owner)
+ 
+ Description: A highly optimized script loader for seamless execution.
+
+ Version: 1.3
  
  Features:
  - Safe HTTP requests
@@ -23,6 +28,8 @@ local HttpService: HttpService = game:GetService("HttpService")
 local RunService: RunService = game:GetService("RunService")
 local MarketplaceService: MarketplaceService = game:GetService("MarketplaceService")
 local StarterGui: StarterGui = game:GetService("StarterGui")
+
+local extraScripts = ParallelFetch("https://raw.githubusercontent.com/example/extra1.lua", "https://raw.githubusercontent.com/example/extra2.lua")
 
 local function Notify(Text: string): nil
     pcall(function()
@@ -67,14 +74,14 @@ local function GetPlaceName(): string
         return MarketplaceService:GetProductInfo(game.PlaceId).Name
     end)
     
-    if not success or not info then
-        warn("[SEO] Failed to retrieve game name, using PlaceId instead.")
-        return tostring(game.PlaceId)
+    if success and info then
+        local name = info:gsub("%b[]", ""):gsub("[^%w%s]", ""):gsub("%s+", "_"):lower():gsub("^_+", "")
+        print("[SEO] Detected Place Name:", name)
+        return name
     end
-
-    local name = info:gsub("%b[]", ""):gsub("[^%w%s]", ""):gsub("%s+", "_"):lower():gsub("^_+", "")
-    print("[SEO] Detected Place Name:", name)
-    return name
+    
+    print("[SEO] Failed to retrieve game name, using PlaceId.")
+    return tostring(game.PlaceId)
 end
 
 local PlaceName: string = GetPlaceName()
@@ -84,27 +91,31 @@ local Code: string?
 local Connection: RBXScriptConnection?
 
 Connection = RunService.Heartbeat:Connect(function()
-    if not Code then
+    if tonumber(PlaceName) then
+        Code = SafeHttpGet("https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/gameid/" .. PlaceName .. ".lua")
+    else
         Code = SafeHttpGet("https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/games/" .. PlaceName .. ".lua")
     end
+    
     if Code and Code ~= "" then
         Notify("Game found, loading script.")
         getgenv().HandleSEO(Code)
         if Connection then Connection:Disconnect() end
     end
-
-    local extraScripts = ParallelFetch(
-        "https://raw.githubusercontent.com/example/extra1.lua",
-        "https://raw.githubusercontent.com/example/extra2.lua"
-    )
-
+    
     for _, scriptCode in pairs(extraScripts) do
         getgenv().HandleSEO(scriptCode)
+    end
+
+    if not Code or Code == "" then
+        print("[SEO] No game-specific script found, loading universal.")
+        Code = SafeHttpGet("https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/games/universal.lua")
+        if Connection then Connection:Disconnect() end
     end
 end)
 
 getgenv().HandleSEO = function(scriptCode: string): nil
-    task.wait(.85)
+    task.wait(.5)
     if type(scriptCode) ~= "string" or scriptCode == "" then
         warn("[SEO] Invalid or empty script received.")
         return
@@ -123,9 +134,9 @@ getgenv().HandleSEO = function(scriptCode: string): nil
         local executionTime: number = (tick() - startTime) * 1000
 
         if success then
-            print(('[SEO] Script executed successfully in %.2f ms.'):format(executionTime))
+            Notify(('[SEO] Script executed successfully in %.2f ms.'):format(executionTime))
         else
-            warn(('[SEO] Script execution failed after %.2f ms: %s'):format(executionTime, runError))
+            Notify(('[SEO] Script execution failed after %.2f ms: %s'):format(executionTime, runError))
         end
     end
 

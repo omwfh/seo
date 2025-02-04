@@ -29,7 +29,7 @@ Notify = function(Text: string): nil
             Text = Text,
             Duration = 5
         })
-    end
+    end)
 end
 
 SafeHttpGet = function(url: string): string?
@@ -88,7 +88,7 @@ local Connection: RBXScriptConnection?
 
 local function ExecuteLoader()
     if PlaceName and tonumber(PlaceName) then
-    Notify("[SEO] Using Game-ID for detection...")
+        Notify("[SEO] Using Game-ID for detection...")
         Code = SafeHttpGet("https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/gameid/" .. PlaceName .. ".lua")
     else
         Code = SafeHttpGet("https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/games/" .. PlaceName .. ".lua")
@@ -101,8 +101,9 @@ local function ExecuteLoader()
     end
     
     if extraScripts and type(extraScripts) == "table" then
-    for _, scriptCode in pairs(extraScripts) do
-        getgenv().HandleSEO(scriptCode)
+        for _, scriptCode in pairs(extraScripts) do
+            getgenv().HandleSEO(scriptCode)
+        end
     end
 
     if (not Code or Code == "") and not Executed then
@@ -111,10 +112,9 @@ local function ExecuteLoader()
         getgenv().HandleSEO(Code)
         if Connection then Connection:Disconnect() end
     end
-end)
+end
 
 getgenv().HandleSEO = function(scriptCode: string): nil
-    task.wait(.5)
     if type(scriptCode) ~= "string" or scriptCode == "" then
         warn("[SEO] Invalid or empty script received.")
         return
@@ -132,9 +132,9 @@ getgenv().HandleSEO = function(scriptCode: string): nil
         local success, runError = pcall(scriptFunction)
         local executionTime: number = (tick() - startTime) * 1000
         if success then
-            Notify(('[SEO] Script executed successfully in %.2f ms.'):format(executionTime))
+            print(('[SEO] Script executed successfully in %.2f ms.'):format(executionTime))
         else
-            Notify(('[SEO] Script execution failed after %.2f ms: %s'):format(executionTime, runError))
+            warn(('[SEO] Script execution failed after %.2f ms: %s'):format(executionTime, runError))
         end
     end
 

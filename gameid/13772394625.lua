@@ -14,10 +14,10 @@ local lastPressTime = {}
 local isKeyPressed = {}
 
 local configHighPing = {
-    value1 = 0.118,
-    value2 = 0.003,
-    value3 = 0.012,
-    value4 = 0.22
+    value1 = 0.12,
+    value2 = 0.0047,
+    value3 = 0.013,
+    value4 = 0.29
 }
 
 local configLowPing = {
@@ -29,7 +29,7 @@ local configLowPing = {
 
 local currentConfig = nil
 local lastConfigUpdate = tick()
-local configUpdateInterval = .1
+local configUpdateInterval = .01
 
 local function printValues()
     print("Current Config:")

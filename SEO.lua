@@ -20,7 +20,7 @@ local RunService: RunService = game:GetService("RunService")
 local MarketplaceService: MarketplaceService = game:GetService("MarketplaceService")
 local StarterGui: StarterGui = game:GetService("StarterGui")
 
-local extraScripts = {}
+local extraScripts = {"https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/EXTRA/FESP.lua"}
 
 Notify = function(Text: string): nil
     pcall(function()

@@ -23,7 +23,7 @@ local MarketplaceService: MarketplaceService = game:GetService("MarketplaceServi
 local StarterGui: StarterGui = game:GetService("StarterGui")
 
 local miscellaneous = {
-    ["https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/Misc/ESP.lua"] = true,
+    ["https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/Misc/ESP.lua"] = false,
 }
 
 NotifyUser = function(text: string): nil

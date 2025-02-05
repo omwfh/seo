@@ -54,7 +54,7 @@ GetGameName = function(): string
     end)
     
     if success and info then
-        local name = info:gsub("%b[]", ""):gsub("[^%w%s]", ""):gsub("%s+", "_"):lower():gsub("^_+", "")
+        local name = info:gsub("%b[]", ""):gsub("[^%w%s]", ""):gsub("%s+", "_"):gsub("^_+", ""):gsub("_+$", ""):lower() 
         print("[SEO] Detected Game Name:", name)
         return name
     end

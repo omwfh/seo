@@ -27,7 +27,7 @@ local configLowPing = {
 
 local currentConfig = nil
 local lastConfigUpdate = tick()
-local configUpdateInterval = .01
+local configUpdateInterval = .2
 
 local function printValues()
     print("Current Config:")

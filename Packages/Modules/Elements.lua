@@ -27,15 +27,15 @@ local function isValidProperty(instance: Instance, property: string): boolean
 end
 
 local function logError(message: string)
-    warn("[⚠️ createElement ERROR] " .. message)
+    warn("[⚠️ ELEMENT ERROR] " .. message)
 end
 
 local function logDebug(message: string)
-    print("[🔍 createElement DEBUG] " .. message)
+    print("[🔍 ELEMENT DEBUG] " .. message)
 end
 
 function createElement.new(className: string, properties: {[string]: any}?, children: {[string]: Instance}?): Instance
-    assert(typeof(className) == "string", "[createElement] Expected className to be a string, got " .. typeof(className))
+    assert(typeof(className) == "string", "[ELEMENT] Expected className to be a string, got " .. typeof(className))
 
     local success, instance = pcall(Instance.new, className)
     if not success then

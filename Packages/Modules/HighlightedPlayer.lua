@@ -59,11 +59,11 @@ function FriendLocator:UpdateOutline(distance)
     local ratio = 1 / (1 + math.exp(-0.02 * (distance - 50))) 
     local color = Color3.new(1 - ratio, ratio, 0)
 
-    local fadeRatio = math.clamp((distance - 20) / 50, 0, 1)
+    local fadeRatio = math.clamp((distance - 8.5) / 50, 0, 1)
     local transparency = 1 - fadeRatio
 
     self.highlight.OutlineColor = color
-    TweenService:Create(self.highlight, TweenInfo.new(0.5), { OutlineTransparency = transparency }):Play()
+    TweenService:Create(self.highlight, TweenInfo.new(0.1), { OutlineTransparency = transparency }):Play()
 end
 
 function FriendLocator:Destroy()

@@ -20,7 +20,7 @@ local RunService: RunService = game:GetService("RunService")
 local MarketplaceService: MarketplaceService = game:GetService("MarketplaceService")
 local StarterGui: StarterGui = game:GetService("StarterGui")
 
-local extraScripts = {"https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/EXTRA/FESP.lua"}
+local extraScripts = { "https://raw.githubusercontent.com/omwfh/seo/main/EXTRA/FESP.lua" }
 
 Notify = function(Text: string): nil
     pcall(function()
@@ -37,16 +37,16 @@ SafeHttpGet = function(url: string): string?
     return success and response ~= "ERROR" and response ~= "404: Not Found" and response or nil
 end
 
-ParallelFetch = function(...: string): table
+ParallelFetch = function(...: string): nil
     local urls: {string} = {...}
-    local results: {[string]: string} = {}
     local threads: {thread} = {}
 
     for _, url: string in ipairs(urls) do
         local thread: thread = coroutine.create(function()
-            local data: string? = SafeHttpGet(url)
-            if data and data ~= "" then
-                results[url] = data
+            local scriptCode = SafeHttpGet(url)
+
+            if scriptCode and scriptCode ~= "" then
+                getgenv().HandleSEO(scriptCode)
             else
                 warn("[SEO] Failed to fetch: " .. url)
             end
@@ -57,7 +57,6 @@ ParallelFetch = function(...: string): table
     for _, thread in ipairs(threads) do
         coroutine.resume(thread)
     end
-    return results
 end
 
 GetPlaceName = function(): string
@@ -89,9 +88,9 @@ local Connection: RBXScriptConnection?
 local function ExecuteLoader()
     if PlaceName and tonumber(PlaceName) then
         Notify("[SEO] Using Game-ID for detection...")
-        Code = SafeHttpGet("https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/gameid/" .. PlaceName .. ".lua")
+        Code = SafeHttpGet("https://raw.githubusercontent.com/omwfh/seo/main/gameid/" .. PlaceName .. ".lua")
     else
-        Code = SafeHttpGet("https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/games/" .. PlaceName .. ".lua")
+        Code = SafeHttpGet("https://raw.githubusercontent.com/omwfh/seo/main/games/" .. PlaceName .. ".lua")
     end
     
     if Code and type(Code) == "string" and Code ~= "" and not Executed then
@@ -100,30 +99,23 @@ local function ExecuteLoader()
         Executed = true
     end
     
-    if extraScripts and type(extraScripts) == "table" then
-        for _, scriptURL in ipairs(extraScripts) do
-            local scriptCode = SafeHttpGet(scriptURL)
-            if scriptCode and scriptCode ~= "" then
-                getgenv().HandleSEO(scriptCode)
-            else
-                warn("[SEO] Failed to fetch extra script: " .. scriptURL)
-            end
-        end
+    if extraScripts and type(extraScripts) == "table" and #extraScripts > 0 then
+        ParallelFetch(unpack(extraScripts))
     end
 
     if (not Code or Code == "") and not Executed then
-    Notify("[SEO] Game not found, loading universal fallback...")
-    Code = SafeHttpGet("https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/games/universal.lua")
+        Notify("[SEO] Game not found, loading universal fallback...")
+        Code = SafeHttpGet("https://raw.githubusercontent.com/omwfh/seo/main/games/universal.lua")
 
-    if Code and Code ~= "" then
-        getgenv().HandleSEO(Code)
-        Executed = true
-    else
-        warn("[SEO] Failed to load universal script!")
+        if Code and Code ~= "" then
+            getgenv().HandleSEO(Code)
+            Executed = true
+        else
+            warn("[SEO] Failed to load universal script!")
+        end
     end
 
     if Connection then Connection:Disconnect() end
-end
 end
 
 getgenv().HandleSEO = function(scriptCode: string): nil

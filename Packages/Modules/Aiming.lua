@@ -56,13 +56,13 @@ local Aiming: {
     Enabled = true,
     ShowFOV = _G.ShowFov or false,
     FOV = _G.Fov or 100,
-    FOVSides = _G.Sides or 36,
+    FOVSides = _G.Sides or 100,
     FOVColour = Color3.fromRGB(255, 77, 77),
     VisibleCheck = true,
     HitChance = _G.HitChance or 100,
     Selected = nil,
     SelectedPart = nil,
-    TargetPart = _G.TargetPart or "Head",
+    TargetPart = _G.TargetPart or "Upper Torso",
     
     Ignored = {
         Teams = {

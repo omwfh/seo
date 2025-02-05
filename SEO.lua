@@ -104,10 +104,6 @@ local function ExecuteLoader()
         getgenv().HandleSEO(Code)
         Executed = true
     end
-    
-    if extraScripts and type(extraScripts) == "table" and #extraScripts > 0 then
-        ParallelFetch(unpack(extraScripts))
-    end
 
     if (not Code or Code == "") and not Executed then
         Notify("[SEO] Game not found, loading universal fallback...")
@@ -119,6 +115,10 @@ local function ExecuteLoader()
         else
             warn("[SEO] Failed to load universal script!")
         end
+    end
+
+    if extraScripts and type(extraScripts) == "table" and #extraScripts > 0 then
+        ParallelFetch(unpack(extraScripts))
     end
 
     if Connection then Connection:Disconnect() end

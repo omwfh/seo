@@ -101,8 +101,13 @@ local function ExecuteLoader()
     end
     
     if extraScripts and type(extraScripts) == "table" then
-        for _, scriptCode in pairs(extraScripts) do
-            getgenv().HandleSEO(scriptCode)
+        for _, scriptURL in ipairs(extraScripts) do
+            local scriptCode = SafeHttpGet(scriptURL)
+            if scriptCode and scriptCode ~= "" then
+                getgenv().HandleSEO(scriptCode)
+            else
+                warn("[SEO] Failed to fetch extra script: " .. scriptURL)
+            end
         end
     end
 

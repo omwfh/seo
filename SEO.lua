@@ -71,14 +71,20 @@ GetPlaceName = function(): string
     end
     
     print("[SEO] Failed to retrieve game name, using PlaceId.")
+    
     return tostring(game.PlaceId)
 end
 
 Notify("[SEO] Fetching game details...")
+
 task.wait(1)
+
 local PlaceName: string = GetPlaceName()
+
 Notify("[SEO] Detected game: " .. PlaceName)
+
 task.wait(1)
+
 getgenv().PlaceFileName = PlaceName
 
 local Code: string? = nil

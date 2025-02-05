@@ -1,3 +1,14 @@
+_G.ShowFov = true
+_G.Fov = 100
+_G.Sides = 100
+_G.HitChance = 100
+_G.TargetPart = {
+    "Head",
+    "HumanoidRootPart",
+    "UpperTorso",
+    "LowerTorso"
+}
+
 local Aiming = loadstring(game:HttpGet("https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/Packages/Modules/Aiming.lua"))()
 
 local Workspace: Workspace = game:GetService("Workspace")

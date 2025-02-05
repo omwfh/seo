@@ -4,13 +4,19 @@ FriendLocator.__index = FriendLocator
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
+
+getgenv().FriendLocatorEnabled = true
+getgenv().FriendLocatorKeybind = Enum.KeyCode.BackSlash
 
 function FriendLocator.new(userId)
     local self = setmetatable({}, FriendLocator)
     self.userId = userId
     self.friend = Players:GetPlayerByUserId(userId)
     self.highlight = nil
+    self.trackingConnection = nil
     self:SetupESP()
     self:StartTracking()
     return self
@@ -30,7 +36,12 @@ function FriendLocator:SetupESP()
 end
 
 function FriendLocator:StartTracking()
-    RunService.RenderStepped:Connect(function()
+    self.trackingConnection = RunService.RenderStepped:Connect(function()
+        if not getgenv().FriendLocatorEnabled then
+            self:Destroy()
+            return
+        end
+
         if not self.friend or not self.friend.Character then
             self:Destroy()
             return
@@ -40,20 +51,29 @@ function FriendLocator:StartTracking()
         if not rootPart then return end
 
         local distance = (LocalPlayer.Character.HumanoidRootPart.Position - rootPart.Position).Magnitude
-        self:UpdateOutlineColor(distance)
+        self:UpdateOutline(distance)
     end)
 end
 
-function FriendLocator:UpdateOutlineColor(distance)
-    local ratio = 1 / (1 + math.exp(-0.02 * (distance - 50)))
+function FriendLocator:UpdateOutline(distance)
+    local ratio = 1 / (1 + math.exp(-0.02 * (distance - 50))) 
     local color = Color3.new(1 - ratio, ratio, 0)
+
+    local fadeRatio = math.clamp((distance - 10) / 50, 0, 1)
+    local transparency = 1 - fadeRatio
+
     self.highlight.OutlineColor = color
+    TweenService:Create(self.highlight, TweenInfo.new(0.2), { OutlineTransparency = transparency }):Play()
 end
 
 function FriendLocator:Destroy()
     if self.highlight then
         self.highlight:Destroy()
         self.highlight = nil
+    end
+    if self.trackingConnection then
+        self.trackingConnection:Disconnect()
+        self.trackingConnection = nil
     end
 end
 

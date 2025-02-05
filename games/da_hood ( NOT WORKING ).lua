@@ -77,16 +77,6 @@ RunService.Heartbeat:Connect(function()
     getgenv().DaHoodSettings.Prediction = CalculateAccuratePrediction()
 end)
 
-local function Notify(Title: string, Text: string, Duration: number)
-    task.spawn(function()
-        StarterGui:SetCore("SendNotification", {
-            Title = Title,
-            Text = Text,
-            Duration = Duration
-        })
-    end)
-end
-
 Aiming.TeamCheck(false)
 
 Aiming.Check = function(): boolean
@@ -117,5 +107,3 @@ OldIndex = hookmetamethod(game, "__index", function(Object: Instance, Property: 
     end
     return OldIndex(Object, Property)
 end)
-
-Notify("Notification", "SEO: Loaded", 5)

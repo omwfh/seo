@@ -4,6 +4,11 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
 local activeLocators = {}
+local isTyping = false
+
+RunService.RenderStepped:Connect(function()
+    isTyping = UserInputService:GetFocusedTextBox() ~= nil
+end)
 
 local function checkForFriends()
     if not getgenv().FriendLocatorEnabled then return end
@@ -24,16 +29,6 @@ local function removeFriendLocator(player)
         activeLocators[player.UserId] = nil
     end
 end
-
-local isTyping = false
-
-UserInputService.TextBoxFocused:Connect(function()
-    isTyping = true
-end)
-
-UserInputService.TextBoxFocusLost:Connect(function()
-    isTyping = false
-end)
 
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed or isTyping then return end

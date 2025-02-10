@@ -1,4 +1,4 @@
-setfpscap(120)
+setfpscap(300)
 
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
@@ -19,7 +19,7 @@ local configHighPing = {
 }
 
 local configLowPing = {
-    value1 = 0.103,
+    value1 = 0.101,
     value2 = 0.0048,
     value3 = 0.0157,
     value4 = 0.42
@@ -101,10 +101,10 @@ local function calculateThreshold(ball, player)
     updateConfigBasedOnPing(ping * 1000)
     local distance = (ball.Position - rootPart.Position).Magnitude
 
-    local pingCompensation = ping * 1.05
+    local pingCompensation = ping * 1.85
     local baseThreshold = currentConfig.value1 + pingCompensation
 
-    local velocityFactor = math.pow(ball.Velocity.magnitude, 0.5) * currentConfig.value2
+    local velocityFactor = math.pow(ball.Velocity.magnitude, 1.5) * currentConfig.value2
     local distanceFactor = distance * currentConfig.value3
 
     return math.max(baseThreshold, currentConfig.value4 - velocityFactor - distanceFactor)

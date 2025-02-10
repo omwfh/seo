@@ -12,9 +12,9 @@ local lastPressTime = {}
 local isKeyPressed = {}
 
 local configHighPing = {
-    value1 = 0.12,
-    value2 = 0.0047,
-    value3 = 0.013,
+    value1 = 0.107,
+    value2 = 0.0065,
+    value3 = 0.0115,
     value4 = 0.29
 }
 

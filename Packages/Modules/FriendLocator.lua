@@ -34,7 +34,7 @@ function FriendLocator:SetupESP(): nil
         Adornee = self.friend.Character,
         Parent = game.CoreGui,
         FillColor = Color3.fromRGB(255, 255, 255),
-        FillTransparency = 0.8,
+        FillTransparency = 1,
         OutlineColor = Color3.fromRGB(0, 255, 0),
         OutlineTransparency = 0
     })

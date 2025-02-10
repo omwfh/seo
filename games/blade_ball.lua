@@ -19,10 +19,10 @@ local configHighPing = {
 }
 
 local configLowPing = {
-    value1 = 0.102,
-    value2 = 0.0082,
-    value3 = 0.0165,
-    value4 = 0.4
+    value1 = 0.103,
+    value2 = 0.0054,
+    value3 = 0.0157,
+    value4 = 0.365
 }
 
 local currentConfig = nil
@@ -101,10 +101,10 @@ local function calculateThreshold(ball, player)
     updateConfigBasedOnPing(ping * 1000)
     local distance = (ball.Position - rootPart.Position).Magnitude
 
-    local pingCompensation = ping * 2
+    local pingCompensation = ping * 1.35
     local baseThreshold = currentConfig.value1 + pingCompensation
 
-    local velocityFactor = math.pow(ball.Velocity.magnitude, 1.3) * currentConfig.value2
+    local velocityFactor = math.pow(ball.Velocity.magnitude, 0.75) * currentConfig.value2
     local distanceFactor = distance * currentConfig.value3
 
     return math.max(baseThreshold, currentConfig.value4 - velocityFactor - distanceFactor)
@@ -118,7 +118,6 @@ local function checkProximityToPlayer(ball, player)
     
     if predictionTime <= ballSpeedThreshold and realBallAttribute and target == player.Name and not isKeyPressed[ball] and (not lastPressTime[ball] or tick() - lastPressTime[ball] > pressCooldown) then
         Vim:SendKeyEvent(true, Enum.KeyCode.F, false, nil)
-        task.wait()
         Vim:SendKeyEvent(false, Enum.KeyCode.F, false, nil)
         
         lastPressTime[ball] = tick()
@@ -159,4 +158,4 @@ local function checkBallsProximity()
 end
 
 printValues()
-RunService.RenderStepped:Connect(checkBallsProximity)
+RunService.Heartbeat:Connect(checkBallsProximity)

@@ -1,4 +1,4 @@
-setfpscap(240)
+setfpscap(120)
 
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")

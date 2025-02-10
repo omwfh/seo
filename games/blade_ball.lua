@@ -101,10 +101,10 @@ local function calculateThreshold(ball, player)
     updateConfigBasedOnPing(ping * 1000)
     local distance = (ball.Position - rootPart.Position).Magnitude
 
-    local pingCompensation = ping * 1.35
+    local pingCompensation = ping * 1.05
     local baseThreshold = currentConfig.value1 + pingCompensation
 
-    local velocityFactor = math.pow(ball.Velocity.magnitude, 0.75) * currentConfig.value2
+    local velocityFactor = math.pow(ball.Velocity.magnitude, 0.5) * currentConfig.value2
     local distanceFactor = distance * currentConfig.value3
 
     return math.max(baseThreshold, currentConfig.value4 - velocityFactor - distanceFactor)

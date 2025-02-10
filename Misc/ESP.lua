@@ -1,4 +1,4 @@
-local FriendLocator = loadstring(game:HttpGet("https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/Packages/Modules/HighlightedPlayer.lua"))()
+local FriendLocator = loadstring(game:HttpGet("https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/Packages/Modules/FriendLocator.lua"))()
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")

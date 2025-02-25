@@ -31,7 +31,7 @@ local Notification = NotificationModule.Create({
 Notification:InitializeUI()
 Notification:SetFont("GothamBold")
 Notification:SetTextStrokeTransparency(1)
-Notification:SetTextSize(25)
+Notification:SetTextSize(20)
 
 local miscellaneous = {
     ["https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/Misc/ESP.lua"] = false,

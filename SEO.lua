@@ -24,13 +24,13 @@ local StarterGui: StarterGui = game:GetService("StarterGui")
 
 local NotificationModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/Packages/Modules/Notification.lua"))()
 local Notification = NotificationModule.Create({
-    NotificationLifetime = 8,
+    NotificationLifetime = 5,
     NotificationPosition = "Top"
 })
 
 Notification:SetFont("SourceSansBold")
 Notification:SetTextStrokeTransparency(1)
-Notification:SetTextSize(20)
+Notification:SetTextSize(18)
 
 Notification:InitializeUI()
 

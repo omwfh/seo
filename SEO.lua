@@ -24,11 +24,14 @@ local StarterGui: StarterGui = game:GetService("StarterGui")
 
 local NotificationModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/Packages/Modules/Notification.lua"))()
 local Notification = NotificationModule.Create({
-    NotificationLifetime = 5,
+    NotificationLifetime = 8,
     NotificationPosition = "Top"
 })
 
 Notification:InitializeUI()
+Notification:SetFont("GothamBold")
+Notification:SetTextStrokeTransparency(1)
+Notification:SetTextSize(25)
 
 local miscellaneous = {
     ["https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/Misc/ESP.lua"] = false,

@@ -22,17 +22,25 @@ local RunService: RunService = game:GetService("RunService")
 local MarketplaceService: MarketplaceService = game:GetService("MarketplaceService")
 local StarterGui: StarterGui = game:GetService("StarterGui")
 
+local NotificationModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/Packages/Modules/Notification.lua"))()
+local Notification = NotificationModule.Create({
+    NotificationLifetime = 5,
+    NotificationPosition = "Top"
+})
+
+Notification:InitializeUI()
+
 local miscellaneous = {
     ["https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/Misc/ESP.lua"] = false,
 }
 
-NotifyUser = function(text: string): nil
+NotifyUser = function(text: string, type: string): nil
     pcall(function()
-        StarterGui:SetCore("SendNotification", {
-            Title = "SEO",
-            Text = text,
-            Duration = 5
-        })
+        if Notification then
+            Notification:Dispatch(text, type)
+        else
+            warn("[ SEO ] Error in NotifyUser: Notifications system is not initialized.")
+        end
     end)
 end
 
@@ -93,18 +101,18 @@ end
 SetState = function(url: string, state: boolean): nil
     if miscellaneous[url] ~= nil then
         miscellaneous[url] = state
-        NotifyUser("[SEO] " .. (state and "Enabled" or "Disabled") .. " miscellaneous script: " .. url)
+        NotifyUser("[SEO] " .. (state and "Enabled" or "Disabled") .. " miscellaneous script: " .. url, "Success")
     else
-        NotifyUser("[SEO] Miscellaneous script not found in the list.")
+        NotifyUser("[SEO] Miscellaneous script not found in the list.", "Error")
     end
 end
 
 FetchGameDetails = function(): string
-    NotifyUser("[SEO] Fetching game details...")
+    NotifyUser("[SEO] Fetching game details...", "Info")
     task.wait(1)
 
     local placeName: string = GetGameName()
-    NotifyUser("[SEO] Detected game: " .. placeName)
+    NotifyUser("[SEO] Detected game: " .. placeName, "Success")
     task.wait(1)
 
     getgenv().PlaceFileName = placeName
@@ -118,14 +126,14 @@ local PlaceName: string = FetchGameDetails()
 
 Initiate = function(): nil
     if PlaceName and tonumber(PlaceName) then
-        NotifyUser("[SEO] Using Game-ID for detection...")
+        NotifyUser("[SEO] Using Game-ID for detection...", "Info")
         Code = HttpFetch("https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/gameid/" .. PlaceName .. ".lua")
     else
         Code = HttpFetch("https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/games/" .. PlaceName .. ".lua")
     end
     
     if Code and type(Code) == "string" and Code ~= "" and not Executed then
-        NotifyUser("[SEO] Loaded!")
+        NotifyUser("[SEO] Loaded!", "Success")
         getgenv().HandleSEO(Code)
         Executed = true
     end
@@ -135,7 +143,7 @@ Initiate = function(): nil
     end
 
     if (not Code or Code == "") and not Executed then
-        NotifyUser("[SEO] Game not found, loading universal fallback...")
+        NotifyUser("[SEO] Game not found, loading universal fallback...", "Error")
         Code = HttpFetch("https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/games/universal.lua")
 
         if Code and Code ~= "" then

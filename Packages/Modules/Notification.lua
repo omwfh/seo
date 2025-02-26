@@ -69,7 +69,7 @@ local fadeObject: (object: GuiObject, onTweenCompleted: () -> ()) -> () = functi
         error("[ SEO ] Invalid onTweenCompleted callback: Expected function, got " .. typeof(onTweenCompleted))
     end
 
-    local tween = tweenService:Create(object, TweenInfo.new(0.3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+    local tween = tweenService:Create(object, TweenInfo.new(0.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
         TextTransparency = 1,
         TextStrokeTransparency = 1
     })

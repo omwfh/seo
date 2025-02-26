@@ -1,13 +1,11 @@
-local tweenService: TweenService, coreGui: CoreGui = game:GetService("TweenService"), game:GetService("CoreGui")
-local createElement = loadstring(game:HttpGet("https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/Packages/Modules/Elements.lua"))()
+local tweenService: TweenService = game:GetService("TweenService")
+local coreGui: CoreGui = game:GetService("CoreGui")
 
-local insert: (table: {any}, value: any) -> () = table.insert
-local find: (table: {any}, value: any) -> (number?) = table.find
-local remove: (table: {any}, index: number) -> () = table.remove
+local insert: <T>(table: {T}, value: T) -> number = table.insert
+local remove: <T>(table: {T}, index: number) -> T = table.remove
 local format: (string, ...any) -> string = string.format
 
-local activeNotifications: {Instance} = {}
-
+local newInstance: (className: string) -> Instance = Instance.new
 local fromRGB: (number, number, number) -> Color3 = Color3.fromRGB
 
 local notificationPositions: {[string]: UDim2} = {
@@ -19,22 +17,18 @@ local notificationPositions: {[string]: UDim2} = {
     ["TopRight"] = UDim2.new(0.8, 0, 0.001, 0),
 }
 
-local defaultTemplate: {[string]: any} = {
-    NotificationLifetime = 5,
-    NotificationPosition = "MiddleRight",
-    DefaultTextColor = fromRGB(255, 255, 255),
-    SuccessColor = fromRGB(0, 255, 0),
-    ErrorColor = fromRGB(255, 0, 0),
-    WarningColor = fromRGB(255, 165, 0),
-    InfoColor = fromRGB(0, 140, 255),
-    TextSize = 16,
-    TextStrokeTransparency = 0.5,
-    TextStrokeColor = fromRGB(0, 0, 0),
-    TextFont = Enum.Font.SourceSansBold
+local notificationCategories: {[string]: Color3} = {
+    ["Success"] = fromRGB(0, 200, 0),
+    ["Warning"] = fromRGB(255, 165, 0),
+    ["Error"] = fromRGB(200, 0, 0),
+    ["Info"] = fromRGB(0, 122, 255)
 }
 
-protectScreenGui = function(screenGui: ScreenGui): nil
-    if not screenGui then return end
+local protectScreenGui: (screenGui: ScreenGui) -> () = function(screenGui)
+    if not screenGui or typeof(screenGui) ~= "Instance" then
+        error("[ SEO ] Invalid argument: screenGui must be a valid ScreenGui instance.")
+    end
+
     if syn and syn.protect_gui then 
         syn.protect_gui(screenGui)
         screenGui.Parent = coreGui
@@ -45,179 +39,182 @@ protectScreenGui = function(screenGui: ScreenGui): nil
     end
 end
 
-applyFadeIn = function(object: Instance): nil
-    local properties: {[string]: any} = {}
-
-    if object:IsA("TextLabel") or object:IsA("TextButton") then
-        properties.TextTransparency = 0
-        properties.TextStrokeTransparency = 0
-    elseif object:IsA("Frame") or object:IsA("ImageLabel") then
-        properties.BackgroundTransparency = 0
+local createObject: <T>(className: string, properties: {[string]: any}) -> T = function(className, properties)
+    if not className or typeof(className) ~= "string" then
+        error("[ SEO ] Invalid className: Expected string, got " .. typeof(className))
     end
-    
-    object.BackgroundTransparency = 1
+    if not properties or typeof(properties) ~= "table" then
+        error("[ SEO ] Invalid properties: Expected table, got " .. typeof(properties))
+    end
 
-    local fadeInTween = tweenService:Create(object, TweenInfo.new(0.15, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), properties)
-    fadeInTween:Play()
+    local instance = newInstance(className)
+    for index, value in next, properties do 
+        instance[index] = value 
+    end
+    return instance
 end
 
-applyFadeOut = function(object: Instance, onTweenCompleted: (() -> ())?): nil
-    if not object or not object.Parent then return end
+local fadeObject: (object: GuiObject, onTweenCompleted: () -> ()) -> () = function(object, onTweenCompleted)
+    if not object or not object:IsA("GuiObject") then
+        error("[ SEO ] Invalid object: Expected GuiObject, got " .. typeof(object))
+    end
+    if not onTweenCompleted or typeof(onTweenCompleted) ~= "function" then
+        error("[ SEO ] Invalid onTweenCompleted callback: Expected function, got " .. typeof(onTweenCompleted))
+    end
 
-    local fadeOutTween = tweenService:Create(object, TweenInfo.new(0.15, Enum.EasingStyle.Sine, Enum.EasingDirection.In), {
-        BackgroundTransparency = 1,
+    local tween = tweenService:Create(object, TweenInfo.new(0.3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
         TextTransparency = 1,
         TextStrokeTransparency = 1
     })
-
-    fadeOutTween.Completed:Connect(function()
-        local index = find(activeNotifications, object)
-        if index and activeNotifications[index] then
-            remove(activeNotifications, index)
-        end
-
-        if object and object.Parent then
-            object:Destroy()
-        end
-
-        if onTweenCompleted then
-            onTweenCompleted()
-        end
-    end)
-
-    fadeOutTween:Play()
+    tween.Completed:Connect(onTweenCompleted)
+    tween:Play()
 end
 
-local notifications = {}; do 
-    notifications.Create = function(settings: {[string]: any}?): {[string]: any}
-        assert(settings == nil or typeof(settings) == "table", "[ SEO ] Error in Create: Expected a table or nil.")
-
-        local self = setmetatable({}, {__index = notifications})
-        self.ui = { notificationsFrame = nil, notificationsFrame_UIListLayout = nil }
-
-        for setting, value in pairs(defaultTemplate) do
-            self[setting] = settings and settings[setting] or value
+local notifications: {[string]: any} = {}; do 
+    notifications.new = function(settings: {[string]: any}) -> {[string]: any}
+        if not settings or typeof(settings) ~= "table" then
+            error("[ SEO ] Invalid settings: Expected table, got " .. typeof(settings))
         end
 
-        return self
+        local notificationSettings = {
+            ui = { notificationsFrame = nil, notificationsFrame_UIListLayout = nil },
+            MaxNotifications = settings.MaxNotifications or 5,
+            NotificationPadding = settings.NotificationPadding or UDim.new(0, 8)
+        }
+
+        for setting, value in next, settings do 
+            notificationSettings[setting] = value 
+        end
+
+        setmetatable(notificationSettings, {__index = notifications})
+        return notificationSettings
     end
 
-    notifications.InitializeUI = function(self: {[string]: any}): nil
-        assert(typeof(self) == "table", "[ SEO ] Error in InitializeUI: Expected 'self' to be a table.")
+    notifications.SetNotificationLifetime = function(self: {[string]: any}, number: number) -> ()
+        if not number or typeof(number) ~= "number" then
+            error("[ SEO ] Invalid number: Expected number, got " .. typeof(number))
+        end
+        self.NotificationLifetime = number 
+    end
 
+    notifications.SetTextColor = function(self: {[string]: any}, color3: Color3) -> ()
+        if not color3 or typeof(color3) ~= "Color3" then
+            error("[ SEO ] Invalid Color3: Expected Color3, got " .. typeof(color3))
+        end
+        self.TextColor = color3 
+    end
+
+    notifications.SetTextSize = function(self: {[string]: any}, number: number) -> ()
+        if not number or typeof(number) ~= "number" then
+            error("[ SEO ] Invalid TextSize: Expected number, got " .. typeof(number))
+        end
+        self.TextSize = number 
+    end
+
+    notifications.SetTextStrokeTransparency = function(self: {[string]: any}, number: number) -> ()
+        if not number or typeof(number) ~= "number" then
+            error("[ SEO ] Invalid TextStrokeTransparency: Expected number, got " .. typeof(number))
+        end
+        self.TextStrokeTransparency = number 
+    end
+
+    notifications.SetTextStrokeColor = function(self: {[string]: any}, color3: Color3) -> ()
+        if not color3 or typeof(color3) ~= "Color3" then
+            error("[ SEO ] Invalid TextStrokeColor: Expected Color3, got " .. typeof(color3))
+        end
+        self.TextStrokeColor = color3 
+    end
+
+    notifications.SetTextFont = function(self: {[string]: any}, font: string | Enum.Font) -> ()
+        if not font or (typeof(font) ~= "string" and typeof(font) ~= "EnumItem") then
+            error("[ SEO ] Invalid font: Expected string or EnumItem, got " .. typeof(font))
+        end
+        self.TextFont = typeof(font) == "string" and Enum.Font[font] or font
+    end
+  
+    notifications.BuildNotificationUI = function(self: {[string]: any}) -> ()
         if notifications_screenGui then 
             notifications_screenGui:Destroy()
         end
 
-        getgenv().notifications_screenGui = createElement.new("ScreenGui", {
+        getgenv().notifications_screenGui = createObject("ScreenGui", {
             ZIndexBehavior = Enum.ZIndexBehavior.Sibling
         })
-        
         protectScreenGui(notifications_screenGui)
 
-        self.ui.notificationsFrame = createElement.new("Frame", {
+        self.ui.notificationsFrame = createObject("Frame", {
             Name = "notificationsFrame",
             Parent = notifications_screenGui,
-            BackgroundTransparency = 1.000,
-            Size = UDim2.new(0, 300, 0, 0),
-            Position = notificationPositions[self.NotificationPosition] or UDim2.new(0.5, -150, 0.007, 0),
-            AnchorPoint = Vector2.new(0.5, 0),
+            BackgroundColor3 = fromRGB(255, 255, 255),
+            BackgroundTransparency = 1,
+            Position = notificationPositions[self.NotificationPosition] or notificationPositions["TopRight"],
+            Size = UDim2.new(0, 236, 0, 215),
             ClipsDescendants = true
         })
 
-        self.ui.notificationsFrame_UIListLayout = createElement.new("UIListLayout", {
+        self.ui.notificationsFrame_UIListLayout = createObject("UIListLayout", {
             Name = "notificationsFrame_UIListLayout",
             Parent = self.ui.notificationsFrame,
-            Padding = UDim.new(0, 10),
+            Padding = self.NotificationPadding,
             SortOrder = Enum.SortOrder.LayoutOrder
         })
-
-        self.ui.notificationsFrame_UIListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-            self.ui.notificationsFrame.Size = UDim2.new(0, 300, 0, self.ui.notificationsFrame_UIListLayout.AbsoluteContentSize.Y)
-        end)
     end
 
-    notifications.SetLifetime = function(self: {[string]: any}, duration: number): nil
-        assert(typeof(duration) == "number", format("[ SEO ] Error in SetLifetime: Expected number, got %s.", typeof(duration)))
-        assert(duration > 0, "[ SEO ] Error in SetLifetime: Duration must be greater than 0.")
-        self.NotificationLifetime = duration
-    end
-
-    notifications.SetTextColor = function(self: {[string]: any}, color: Color3): nil
-        assert(typeof(color) == "Color3", format("[ SEO ] Error in SetTextColor: Expected Color3, got %s.", typeof(color)))
-        self.DefaultTextColor = color
-    end
-
-    notifications.SetTextSize = function(self: {[string]: any}, size: number): nil
-        assert(typeof(size) == "number", format("[ SEO ] Error in SetTextSize: Expected number, got %s.", typeof(size)))
-        assert(size > 0, "[ SEO ] Error in SetTextSize: Text size must be greater than 0.")
-        self.TextSize = size
-    end
-
-    notifications.SetTextStrokeTransparency = function(self: {[string]: any}, transparency: number): nil
-        assert(typeof(transparency) == "number", format("[ SEO ] Error in SetTextStrokeTransparency: Expected number, got %s.", typeof(transparency)))
-        assert(transparency >= 0 and transparency <= 1, "[ SEO ] Error in SetTextStrokeTransparency: Transparency must be between 0 and 1.")
-        self.TextStrokeTransparency = transparency
-    end
-
-    notifications.SetTextStrokeColor = function(self: {[string]: any}, color: Color3): nil
-        assert(typeof(color) == "Color3", format("[ SEO ] Error in SetTextStrokeColor: Expected Color3, got %s.", typeof(color)))
-        self.TextStrokeColor = color
-    end
-
-    notifications.SetFont = function(self: {[string]: any}, font: string): nil
-        assert(typeof(font) == "string", format("[ SEO ] Error in SetFont: Expected string, got %s.", typeof(font)))
-        local validFont: Font = Enum.Font[font] and Enum.Font[font] or nil
-        assert(validFont, format("[ SEO ] Error in SetFont: Invalid font name '%s'.", tostring(font)))
-        self.TextFont = validFont
-    end
-
-    notifications.Dispatch = function(self: {[string]: any}, text: string, notificationType: string?): nil
-        assert(typeof(self) == "table", "[ SEO ] Error in Dispatch: Expected 'self' to be a table.")
-        assert(typeof(text) == "string", format("[ SEO ] Error in Dispatch: Expected string, got %s.", typeof(text)))
-        assert(text ~= "", "[ SEO ] Error in Dispatch: Text cannot be empty.")
-
-        if not self.ui.notificationsFrame then
-            warn("[ SEO ] Warning: UI is not initialized. Calling InitializeUI automatically.")
-            self:InitializeUI()
+    notifications.Notify = function(self: {[string]: any}, text: string, category: string?) -> ()
+        if not text or typeof(text) ~= "string" then
+            error("[ SEO ] Invalid text: Expected string, got " .. typeof(text))
         end
-
-        local textColor = self.DefaultTextColor
-        if notificationType == "Success" then textColor = self.SuccessColor
-        elseif notificationType == "Error" then textColor = self.ErrorColor
-        elseif notificationType == "Warning" then textColor = self.WarningColor
-        elseif notificationType == "Info" then textColor = self.InfoColor
+    
+        if not self.ui.notificationsFrame then self:BuildNotificationUI() end
+    
+        local children = self.ui.notificationsFrame:GetChildren()
+        
+        if #children - 1 >= self.MaxNotifications then
+            children[2]:Destroy()
         end
-
-        local notification = createElement.new("TextLabel", {
-            Name = "Notification",
+    
+        local categoryColor = notificationCategories[category] or fromRGB(30, 30, 30)
+    
+        local notification = createObject("TextLabel", {
+            Name = "notification",
             Parent = self.ui.notificationsFrame,
-            BackgroundTransparency = 1.000,
-            Size = UDim2.new(1, 0, 0, 0),
-            AutomaticSize = Enum.AutomaticSize.Y,
-            Text = text,
-            Font = self.TextFont,
-            TextColor3 = textColor,
-            TextSize = self.TextSize,
-            TextStrokeColor3 = self.TextStrokeColor,
-            TextStrokeTransparency = self.TextStrokeTransparency,
+            BackgroundColor3 = categoryColor,
+            BackgroundTransparency = 0.2,
+            Size = UDim2.new(0, 222, 0, 0),
+            Text = "",
+            Font = self.TextFont or Enum.Font.SourceSans,
+            TextColor3 = self.TextColor or fromRGB(255, 255, 255),
+            TextSize = self.TextSize or 16,
+            TextStrokeColor3 = self.TextStrokeColor or fromRGB(0, 0, 0),
+            TextStrokeTransparency = self.TextStrokeTransparency or 1,
             TextWrapped = true,
-            TextXAlignment = Enum.TextXAlignment.Center,
-            TextYAlignment = Enum.TextYAlignment.Center
+            ClipsDescendants = false,
+            AutomaticSize = Enum.AutomaticSize.Y
         })
-
-        insert(activeNotifications, notification)
+    
+        task.wait()
         
-        applyFadeIn(notification)
+        local textHeight = math.max(20, notification.TextBounds.Y + 10)
+    
+        local tween = tweenService:Create(notification, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+            Size = UDim2.new(0, 222, 0, textHeight)
+        })
         
-        self.ui.notificationsFrame_UIListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-            self.ui.notificationsFrame.Size = UDim2.new(0, 300, 0, self.ui.notificationsFrame_UIListLayout.AbsoluteContentSize.Y + 15)
+        tween:Play()
+    
+        task.spawn(function()
+            for i = 1, #text do
+                notification.Text = string.sub(text, 1, i)
+                task.wait(0.03)
+            end
         end)
-
-        task.delay(self.NotificationLifetime, function()
-            applyFadeOut(notification)
+    
+        task.delay(self.NotificationLifetime or 3, function()
+            fadeObject(notification, function()
+                notification:Destroy()
+            end)
         end)
-    end
+    end    
 end
 
 return notifications

@@ -132,7 +132,7 @@ local notifications = {}; do
         })
 
         self.ui.notificationsFrame_UIListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-            self.ui.notificationsFrame.Size = UDim2.new(0, 600, 0, self.ui.notificationsFrame_UIListLayout.AbsoluteContentSize.Y)
+            self.ui.notificationsFrame.Size = UDim2.new(0, 300, 0, self.ui.notificationsFrame_UIListLayout.AbsoluteContentSize.Y)
         end)
     end
 

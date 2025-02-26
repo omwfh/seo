@@ -3,13 +3,17 @@ local getgenv: () -> ({[string]: any}) = getfenv().getgenv
 local createElement = {}
 createElement.__index = createElement
 
-local function deepCopy(original: any)
+local function deepCopy(original: any, copies: {[any]: any}?): any
     if typeof(original) ~= "table" then return original end
+    copies = copies or {}
+    if copies[original] then return copies[original] end
+
     local copy = {}
+    copies[original] = copy
     for key, value in pairs(original) do
-        copy[key] = deepCopy(value)
+        copy[key] = deepCopy(value, copies)
     end
-    return copy
+    return setmetatable(copy, getmetatable(original))
 end
 
 local function isEvent(instance: Instance, property: string): boolean
@@ -20,24 +24,22 @@ local function isEvent(instance: Instance, property: string): boolean
 end
 
 local function isValidProperty(instance: Instance, property: string): boolean
-    local success = pcall(function()
-        local _ = instance[property]
-    end)
-    return success
+    return pcall(function() return instance[property] end)
 end
 
 local function logError(message: string)
-    warn("[⚠️ ELEMENT ERROR] " .. message)
+    warn("[SEO ERROR] " .. message)
 end
 
 local function logDebug(message: string)
-    print("[🔍 ELEMENT DEBUG] " .. message)
+    print("[SEO DEBUG] " .. message)
 end
 
-function createElement.new(className: string, properties: {[string]: any}?, children: {[string]: Instance}?): Instance
-    assert(typeof(className) == "string", "[ELEMENT] Expected className to be a string, got " .. typeof(className))
+function createElement.new(className: string, properties: {[string]: any}?, children: {[string]: Instance}?): Instance?
+    assert(typeof(className) == "string", "[SEO] Expected className to be a string, got " .. typeof(className))
 
     local success, instance = pcall(Instance.new, className)
+    
     if not success then
         logError(string.format("Failed to create instance of type '%s'", className))
         return nil
@@ -111,6 +113,7 @@ function createElement.clone(instance: Instance): Instance?
             return nil
         end
     end
+    
     logError("Invalid instance provided for cloning")
     return nil
 end

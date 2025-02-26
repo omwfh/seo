@@ -203,6 +203,8 @@ local notifications: {[string]: any} = {}; do
             ClipsDescendants = false,
             AutomaticSize = Enum.AutomaticSize.Y
         })
+
+        self.ui.notificationsFrame.BackgroundTransparency = 1
     
         task.wait()
         

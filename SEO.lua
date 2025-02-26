@@ -25,6 +25,8 @@ local StarterGui: StarterGui = game:GetService("StarterGui")
 local NotificationModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/Packages/Modules/Notification.lua"))()
 local Notification = NotificationModule.Create({
     NotificationLifetime = 5,
+    MaxNotifications = 5,
+    NotificationPadding = UDim.new(0, 10),
     NotificationPosition = "Top"
 })
 
@@ -41,7 +43,7 @@ local miscellaneous = {
 NotifyUser = function(text: string, type: string): nil
     pcall(function()
         if Notification then
-            Notification:Dispatch(text, type)
+            Notification:Notify(text, type)
         else
             warn("[ SEO ] Error in NotifyUser: Notifications system is not initialized.")
         end
@@ -203,6 +205,7 @@ getgenv().HandleSEO = function(scriptCode: string): nil
     RunScript = function(): nil
         local success, runError = pcall(scriptFunction)
         local executionTime: number = (tick() - startTime) * 1000
+        
         if success then
             print(('[SEO] Script executed successfully in %.2f ms.'):format(executionTime))
         else

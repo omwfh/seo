@@ -193,13 +193,15 @@ local notifications = {}; do
             Name = "Notification",
             Parent = self.ui.notificationsFrame,
             BackgroundTransparency = 1.000,
-            Size = UDim2.new(0, 600, 0, 20),
+            Size = UDim2.new(0, 600, 0, 0),
+            AutomaticSize = Enum.AutomaticSize.Y,
             Text = text,
             Font = self.TextFont,
             TextColor3 = textColor,
             TextSize = self.TextSize,
             TextStrokeColor3 = self.TextStrokeColor,
-            TextStrokeTransparency = self.TextStrokeTransparency
+            TextStrokeTransparency = self.TextStrokeTransparency,
+            TextWrapped = true
         })
 
         insert(activeNotifications, notification)

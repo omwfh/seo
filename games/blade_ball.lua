@@ -236,37 +236,40 @@ local function GetClosestPlayerDistance(ball: BasePart): number?
 end
 
 local function TrackBallVelocity(ball: BasePart)
-	local velocity: Vector3? = GetBallVelocity(ball)
-	if not velocity then return end
+    local velocity = GetBallVelocity(ball)
+    
+    if not velocity then return end
 
-	local currentSpeed: number = velocity.Magnitude
-	local lastSpeed: number = peakTracker[ball] or currentSpeed
-	local ping: number = GetPlayerPing() / 1000
-	local velocityFactor: number = math.min(velocity.Magnitude * 0.00002, 0.002)
-	local pingFactor: number = math.min(ping * 0.0003, 0.002)
-	local closestDistance: number? = GetClosestPlayerDistance(ball)
+    local currentSpeed = velocity.Magnitude
+    local lastSpeed = peakTracker[ball] or currentSpeed
+    local ping = getPlayerPing() / 1000
+    local velocityFactor = math.min(velocity.Magnitude * 0.00002, 0.002)
+    local pingFactor = math.min(ping * 0.0003, 0.002)
+    local closestDistance = GetClosestPlayerDistance(ball)
 
-	currentConfig.value1 = baseValue1
-	currentConfig.value2 = originalValue2
-	currentConfig.value3 = originalValue3
+    currentConfig.value1 = baseValue1
+    currentConfig.value2 = originalValue2
+    currentConfig.value3 = originalValue3
 
-	if closestDistance then
-		if closestDistance <= 8 then
-			currentConfig.value1 = math.min(0.001, currentConfig.value1 - (0.0001 + velocityFactor + pingFactor))
-			currentConfig.value2 = math.min(0.0005, currentConfig.value2 - 0.0003)
-			currentConfig.value3 = math.min(0.0005, currentConfig.value3 - 0.003)
-		elseif closestDistance <= 15 then
-			currentConfig.value1 = math.min(0.15, currentConfig.value1 - (0.0001 + velocityFactor + pingFactor))
-			currentConfig.value2 = math.min(0.002, currentConfig.value2 - 0.00005)
-			currentConfig.value3 = math.min(0.003, currentConfig.value3 - 0.0005)
-		end
-	end
+    if not closestDistance then
+        return
+    end
 
-	currentConfig.value1 = math.max(baseValue1, currentConfig.value1)
-	currentConfig.value2 = math.max(0, currentConfig.value2)
-	currentConfig.value3 = math.max(0, currentConfig.value3)
+    if closestDistance <= 8 then
+        currentConfig.value1 = math.min(0.001, currentConfig.value1 - (0.0001 + velocityFactor + pingFactor))
+        currentConfig.value2 = math.min(0.0005, currentConfig.value2 - 0.0003)
+        currentConfig.value3 = math.min(0.0005, currentConfig.value3 - 0.003)
+    elseif closestDistance <= 15 then
+        currentConfig.value1 = math.min(0.15, currentConfig.value1 - (0.0001 + velocityFactor + pingFactor))
+        currentConfig.value2 = math.min(0.002, currentConfig.value2 - 0.00005)
+        currentConfig.value3 = math.min(0.003, currentConfig.value3 - 0.0005)
+    end
 
-	peakTracker[ball] = currentSpeed
+    currentConfig.value1 = math.max(baseValue1, currentConfig.value1)
+    currentConfig.value2 = math.max(0, currentConfig.value2)
+    currentConfig.value3 = math.max(0, currentConfig.value3)
+
+    peakTracker[ball] = currentSpeed
 end
 
 local function UpdateConfigBasedOnPing(ping: number): nil

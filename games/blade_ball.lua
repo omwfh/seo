@@ -566,5 +566,5 @@ end
 
 --MonitorAliveFolder()
 
-autoParryEnabled(true)
+ToggleAutoParry(true)
 checkBallsConnection = RunService.Heartbeat:Connect(CheckBallsProximity)

@@ -30,7 +30,7 @@ local Notification = NotifLib.new({
     NotificationPosition = "Top"
 })
 
-Notification:SetFont("SourceSansBold")
+Notification:SetTextFont("SourceSansBold")
 Notification:SetTextStrokeTransparency(1)
 Notification:SetTextSize(18)
 

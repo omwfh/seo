@@ -57,14 +57,14 @@ applyFadeIn = function(object: Instance): nil
     
     object.BackgroundTransparency = 1
 
-    local fadeInTween = tweenService:Create(object, TweenInfo.new(0.8, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), properties)
+    local fadeInTween = tweenService:Create(object, TweenInfo.new(0.15, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), properties)
     fadeInTween:Play()
 end
 
 applyFadeOut = function(object: Instance, onTweenCompleted: (() -> ())?): nil
     if not object or not object.Parent then return end
 
-    local fadeOutTween = tweenService:Create(object, TweenInfo.new(0.8, Enum.EasingStyle.Sine, Enum.EasingDirection.In), {
+    local fadeOutTween = tweenService:Create(object, TweenInfo.new(0.15, Enum.EasingStyle.Sine, Enum.EasingDirection.In), {
         BackgroundTransparency = 1,
         TextTransparency = 1,
         TextStrokeTransparency = 1

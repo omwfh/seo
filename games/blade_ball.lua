@@ -406,7 +406,6 @@ local function ShouldSkipParry(ball: BasePart): boolean
     if not velocity then return false end
 
     if IsBallCurving(ball, velocity) then
-		print("ball curved")
         return false
     end
 
@@ -469,7 +468,8 @@ local function CheckBallsProximity(): nil
             if timeToImpact < 0.2 and tick() - lastPressTime > pressCooldown then
                 Vim:SendKeyEvent(true, Enum.KeyCode.F, false, nil)
                 Vim:SendKeyEvent(false, Enum.KeyCode.F, false, nil)
-                lastPressTime = tick()
+                
+				lastPressTime = tick()
                 return
             end
         end

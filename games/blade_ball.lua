@@ -45,7 +45,7 @@ local baseCurveThreshold: number = math.rad(12)
 local previousVelocity: Vector3? = nil
 local accelerationThreshold: number = 7
 
-local currentConfig: { value1: number, value2: number, value3: number, value4: number }? = nil
+local currentConfig: { value1: number, value2: number, value3: number, value4: number } = configLowPing
 local lastConfigUpdate: number = tick()
 local configUpdateInterval: number = 0.2
 
@@ -68,6 +68,7 @@ end
 
 local function ResetConfigForNewBall(): nil
 	lastBallSpawnTime = tick()
+	currentConfig = currentConfig or configLowPing
 	currentConfig.value1 = baseValue1
 	currentConfig.value2 = originalValue2
 	currentConfig.value3 = originalValue3
@@ -242,7 +243,7 @@ local function TrackBallVelocity(ball: BasePart)
 
     local currentSpeed = velocity.Magnitude
     local lastSpeed = peakTracker[ball] or currentSpeed
-    local ping = getPlayerPing() / 1000
+    local ping = GetPlayerPing() / 1000
     local velocityFactor = math.min(velocity.Magnitude * 0.00002, 0.002)
     local pingFactor = math.min(ping * 0.0003, 0.002)
     local closestDistance = GetClosestPlayerDistance(ball)
@@ -352,6 +353,9 @@ local function CheckProximityToPlayer(ball: BasePart, player: Player): nil
 	end
 end
 
+local autoParryEnabled: boolean = true
+local checkBallsConnection: RBXScriptConnection? = RunService.Heartbeat:Connect(CheckBallsProximity)
+
 local function GetAllBalls(): { BasePart }
 	local allBalls: { BasePart } = {}
 
@@ -406,9 +410,8 @@ local function ShouldSkipParry(ball: BasePart): boolean
 		return true
 	end
 
-	if velocity.Y > 350 and velocity.Magnitude > 150 then
+	if velocity.Y > 350 and velocity.Magnitude > 200 then
 		local sfx: Sound? = ball:FindFirstChild("sfx")
-
 		if sfx and sfx.SoundId == "rbxassetid://18473465414" then
 			if ignoredUntil[ball] and tick() < ignoredUntil[ball] then
 				return true
@@ -464,110 +467,34 @@ local function CheckBallsProximity(): nil
 	end
 end
 
-local function ToggleAutoParry(state: boolean): nil
-	if state then
-		if not autoParryEnabled then
-			autoParryEnabled = true
-			checkBallsConnection = RunService.Heartbeat:Connect(CheckBallsProximity)
-		end
-	else
-		if autoParryEnabled then
-			if checkBallsConnection then
-				checkBallsConnection:Disconnect()
-				checkBallsConnection = nil
-			end
-			
-			autoParryEnabled = false
-		end
-	end
-end
+local function ToggleAutoParry(state: boolean?): nil
+    if state == nil then
+        autoParryEnabled = not autoParryEnabled
+    else
+        autoParryEnabled = state
+    end
 
---local function MonitorAliveFolder(): nil
---	RunService.Heartbeat:Connect(function()
---		if not aliveFolder then
---			aliveFolder = Workspace:FindFirstChild("Alive")
---			if not aliveFolder then return end
---		end
+    if autoParryEnabled then
+        print("[AutoParry] Enabled")
+        if checkBallsConnection then
+            checkBallsConnection:Disconnect()
+        end
+        checkBallsConnection = RunService.Heartbeat:Connect(CheckBallsProximity)
+    else
+        print("[AutoParry] Disabled")
+        if checkBallsConnection then
+            checkBallsConnection:Disconnect()
+            checkBallsConnection = nil
+        end
+    end
+end9
 
---		local alivePlayers: { string } = {}
+UserInputService.InputBegan:Connect(function(input: InputObject, gameProcessed: boolean)
+    if gameProcessed or UserInputService:GetFocusedTextBox() then
+        return
+    end
 
---		for _, obj: Instance in ipairs(aliveFolder:GetChildren()) do
---			local player: Player? = obj:IsA("Model") and Players:GetPlayerFromCharacter(obj)
---			if player then
---				table.insert(alivePlayers, player.Name)
---			end
---		end
-
---		table.sort(alivePlayers)
---		table.sort(specifiedPlayers)
-
---		local match: boolean = #alivePlayers == #specifiedPlayers
-
---		if match then
---			for i: number, v: string in ipairs(alivePlayers) do
---				if v ~= specifiedPlayers[i] then
---					match = false
---					break
---				end
---			end
---		end
-
---		ToggleAutoParry(not match)
---	end)
---end
-
---local function ToggleSpamAbility(): nil
---	if spamQEnabled then
---		spamQEnabled = false
---		if spamQConnection then
---			spamQConnection:Disconnect()
---			spamQConnection = nil
---		end
---	else
---		spamQEnabled = true
---		spamQConnection = RunService.RenderStepped:Connect(function()
---			Vim:SendKeyEvent(true, Enum.KeyCode.Q, false, nil)
---			Vim:SendKeyEvent(false, Enum.KeyCode.Q, false, nil)
---		end)
---	end
---end
-
---local function ToggleRandomMovement(): nil
---	if spamMovementEnabled then
---		spamMovementEnabled = false
---		if spamMovementConnection then
---			spamMovementConnection:Disconnect()
---			spamMovementConnection = nil
---		end
---	else
---		spamMovementEnabled = true
---		spamMovementConnection = RunService.RenderStepped:Connect(function()
---			local randomKey: Enum.KeyCode = movementKeys[math.random(1, #movementKeys)]
---			local holdTime: number = math.random(200, 600) / 1000 
-
---			Vim:SendKeyEvent(true, randomKey, false, nil)
---			task.wait(holdTime)
---			Vim:SendKeyEvent(false, randomKey, false, nil)
-
---			local stopTime: number = math.random(100, 400) / 1000
---			task.wait(stopTime)
---		end)
---	end
---end
-
---UserInputService.InputBegan:Connect(function(input, gameProcessed)
---	if not gameProcessed then
---		if input.KeyCode == Enum.KeyCode.J then
---			ToggleSpamAbility()
---			print("Ability Spam is now: " .. (spamQEnabled and "ON" or "OFF"))
---		elseif input.KeyCode == Enum.KeyCode.K then
---			ToggleRandomMovement()
---			print("Random Movement is now: " .. (spamMovementEnabled and "ON" or "OFF"))
---		end
---	end
---end)
-
---MonitorAliveFolder()
-
-ToggleAutoParry(true)
-checkBallsConnection = RunService.Heartbeat:Connect(CheckBallsProximity)
+    if input.KeyCode == Enum.KeyCode.M then
+        ToggleAutoParry()
+    end
+end)

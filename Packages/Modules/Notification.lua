@@ -57,14 +57,14 @@ applyFadeIn = function(object: Instance): nil
     
     object.BackgroundTransparency = 1
 
-    local fadeInTween = tweenService:Create(object, TweenInfo.new(0.3, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), properties)
+    local fadeInTween = tweenService:Create(object, TweenInfo.new(0.8, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), properties)
     fadeInTween:Play()
 end
 
 applyFadeOut = function(object: Instance, onTweenCompleted: (() -> ())?): nil
     if not object or not object.Parent then return end
 
-    local fadeOutTween = tweenService:Create(object, TweenInfo.new(0.3, Enum.EasingStyle.Sine, Enum.EasingDirection.In), {
+    local fadeOutTween = tweenService:Create(object, TweenInfo.new(0.8, Enum.EasingStyle.Sine, Enum.EasingDirection.In), {
         BackgroundTransparency = 1,
         TextTransparency = 1,
         TextStrokeTransparency = 1
@@ -119,8 +119,9 @@ local notifications = {}; do
             Name = "notificationsFrame",
             Parent = notifications_screenGui,
             BackgroundTransparency = 1.000,
-            Position = notificationPositions[self.NotificationPosition] or notificationPositions[defaultTemplate.NotificationPosition],
-            Size = UDim2.new(0, 233, 0, 0),
+            Position = notificationPositions[self.NotificationPosition] or UDim2.new(0.5, -300 / 2, 0.007, 0),
+            Size = UDim2.new(0, 600, 0, 0),
+            AnchorPoint = Vector2.new(0.5, 0),
             ClipsDescendants = true
         })
 

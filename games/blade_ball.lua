@@ -179,16 +179,18 @@ local function TrackBallVelocity(ball: BasePart)
     currentConfig.value2 = originalValue2
     currentConfig.value3 = originalValue3
 
-    if closestDistance then
-        if closestDistance <= 8 then
-            currentConfig.value1 = math.min(0.001, currentConfig.value1 - (0.0001 + velocityFactor + pingFactor))
-            currentConfig.value2 = math.min(0.0005, currentConfig.value2 - 0.0003)
-            currentConfig.value3 = math.min(0.0005, currentConfig.value3 - 0.003)
-        elseif closestDistance <= 15 then
-            currentConfig.value1 = math.min(0.15, currentConfig.value1 - (0.0001 + velocityFactor + pingFactor))
-            currentConfig.value2 = math.min(0.002, currentConfig.value2 - 0.00005)
-            currentConfig.value3 = math.min(0.003, currentConfig.value3 - 0.0005)
-        end
+    if not closestDistance then
+        return
+    end
+
+    if closestDistance <= 8 then
+        currentConfig.value1 = math.min(0.001, currentConfig.value1 - (0.0001 + velocityFactor + pingFactor))
+        currentConfig.value2 = math.min(0.0005, currentConfig.value2 - 0.0003)
+        currentConfig.value3 = math.min(0.0005, currentConfig.value3 - 0.003)
+    elseif closestDistance <= 15 then
+        currentConfig.value1 = math.min(0.15, currentConfig.value1 - (0.0001 + velocityFactor + pingFactor))
+        currentConfig.value2 = math.min(0.002, currentConfig.value2 - 0.00005)
+        currentConfig.value3 = math.min(0.003, currentConfig.value3 - 0.0005)
     end
 
     currentConfig.value1 = math.max(baseValue1, currentConfig.value1)

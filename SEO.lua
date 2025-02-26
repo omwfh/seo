@@ -27,7 +27,7 @@ local Notification = NotifLib.new({
     NotificationLifetime = 5,
     MaxNotifications = 5,
     NotificationPadding = UDim.new(0, 10),
-    NotificationPosition = "Top"
+    NotificationPosition = "BottomLeft"
 })
 
 Notification:SetTextFont("SourceSansBold")

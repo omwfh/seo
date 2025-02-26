@@ -120,7 +120,7 @@ local notifications = {}; do
             Parent = notifications_screenGui,
             BackgroundTransparency = 1.000,
             Position = notificationPositions[self.NotificationPosition] or notificationPositions[defaultTemplate.NotificationPosition],
-            Size = UDim2.new(0, 600, 0, 0),
+            Size = UDim2.new(0, 233, 0, 0),
             ClipsDescendants = true
         })
 

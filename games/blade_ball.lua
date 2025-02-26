@@ -49,21 +49,21 @@ local currentConfig: { value1: number, value2: number, value3: number, value4: n
 local lastConfigUpdate: number = tick()
 local configUpdateInterval: number = 0.2
 
-local trackedBall: BasePart? = nil
+local startTime: number = tick()
+local lastPrintTime: number = tick()
+local printInterval: number = 180
 
-local spamQEnabled: boolean = false
-local spamQConnection: RBXScriptConnection?
+local trackedBall: BasePart? = nil
 
 local autoParryEnabled: boolean = true
 local checkBallsConnection: RBXScriptConnection?
 
-local spamMovementEnabled: boolean = false
-local spamMovementConnection: RBXScriptConnection?
-
-local movementKeys: { Enum.KeyCode } = { Enum.KeyCode.W, Enum.KeyCode.A, Enum.KeyCode.S, Enum.KeyCode.D }
-
 local function PrintStatus(): nil
-	print("AFK CLAN FARM STARTED")
+    local elapsedTime: number = tick() - startTime
+    local minutes: number = math.floor(elapsedTime / 60)
+    local seconds: number = math.floor(elapsedTime % 60)
+
+    print(string.format("[SEO] Running for %02d:%02d (MM:SS)", minutes, seconds))
 end
 
 local function ResetConfigForNewBall(): nil
@@ -152,22 +152,23 @@ local function IsBallCurving(ball: BasePart, currentVelocity: Vector3): boolean
 end
 
 local function GetBallVelocity(ball: BasePart): Vector3?
-	local velocity: Vector3?
+    if not ball then return nil end
 
-	local success, result: boolean | any = pcall(function()
-		return ball.AssemblyLinearVelocity
-	end)
+    local success, velocity = pcall(function()
+        return ball.AssemblyLinearVelocity
+    end)
+    
+    if success and typeof(velocity) == "Vector3" then
+        return velocity
+    end
 
-	if success and typeof(result) == "Vector3" then
-		velocity = result
-	else
-		local zoomies: Instance? = ball:FindFirstChild("zoomies")
-		if zoomies and zoomies:IsA("Vector3Value") then
-			velocity = zoomies.Value
-		end
-	end
+    local zoomies: Vector3Value? = ball:FindFirstChild("zoomies")
+    
+	if zoomies and zoomies:IsA("Vector3Value") then
+        return zoomies.Value
+    end
 
-	return velocity
+    return ball.Velocity
 end
 
 local function GetPlayerPing(): number
@@ -238,12 +239,12 @@ end
 
 local function TrackBallVelocity(ball: BasePart)
     local velocity = GetBallVelocity(ball)
-    
     if not velocity then return end
 
     local currentSpeed = velocity.Magnitude
     local lastSpeed = peakTracker[ball] or currentSpeed
     local ping = GetPlayerPing() / 1000
+
     local velocityFactor = math.min(velocity.Magnitude * 0.00002, 0.002)
     local pingFactor = math.min(ping * 0.0003, 0.002)
     local closestDistance = GetClosestPlayerDistance(ball)
@@ -252,18 +253,16 @@ local function TrackBallVelocity(ball: BasePart)
     currentConfig.value2 = originalValue2
     currentConfig.value3 = originalValue3
 
-    if not closestDistance then
-        return
-    end
-
-    if closestDistance <= 8 then
-        currentConfig.value1 = math.min(0.001, currentConfig.value1 - (0.0001 + velocityFactor + pingFactor))
-        currentConfig.value2 = math.min(0.0005, currentConfig.value2 - 0.0003)
-        currentConfig.value3 = math.min(0.0005, currentConfig.value3 - 0.003)
-    elseif closestDistance <= 15 then
-        currentConfig.value1 = math.min(0.15, currentConfig.value1 - (0.0001 + velocityFactor + pingFactor))
-        currentConfig.value2 = math.min(0.002, currentConfig.value2 - 0.00005)
-        currentConfig.value3 = math.min(0.003, currentConfig.value3 - 0.0005)
+    if closestDistance then
+        if closestDistance <= 8.45 then
+            currentConfig.value1 = math.min(0.001, currentConfig.value1 - (0.0005 + velocityFactor + pingFactor))
+            currentConfig.value2 = math.min(0.0005, currentConfig.value2 - 0.0003)
+            currentConfig.value3 = math.min(0.0005, currentConfig.value3 - 0.003)
+        elseif closestDistance <= 15 then
+            currentConfig.value1 = math.min(0.1, currentConfig.value1 - (0.00013 + velocityFactor + pingFactor))
+            currentConfig.value2 = math.min(0.005, currentConfig.value2 - 0.000085)
+            currentConfig.value3 = math.min(0.005, currentConfig.value3 - 0.00085)
+        end
     end
 
     currentConfig.value1 = math.max(baseValue1, currentConfig.value1)
@@ -331,26 +330,36 @@ local function CalculateThreshold(ball: BasePart, player: Player): number
 	return math.max(baseThreshold, currentConfig.value4 - velocityFactor - distanceFactor)
 end
 
-local function CheckProximityToPlayer(ball: BasePart, player: Player): nil
-	local predictionTime: number = CalculatePredictionTime(ball, player)
-	local realBallAttribute: boolean? = ball:GetAttribute("realBall")
-	local target: string? = ball:GetAttribute("target")
-	local ballSpeedThreshold: number = CalculateThreshold(ball, player)
+local function CheckProximityToPlayer(ball: BasePart, player: Player): boolean
+    local character = player.Character
+    if not character then return false end
 
-	if predictionTime <= ballSpeedThreshold 
-		and realBallAttribute 
-		and target == player.Name 
-		and not isKeyPressed[ball] 
-		and (not lastPressTime[ball] or tick() - lastPressTime[ball] > pressCooldown) then
+    local rootPart: BasePart? = character:FindFirstChild("HumanoidRootPart")
+    if not rootPart then return false end
 
-		Vim:SendKeyEvent(true, Enum.KeyCode.F, false, nil)
-		Vim:SendKeyEvent(false, Enum.KeyCode.F, false, nil)
+    local predictionTime: number = CalculatePredictionTime(ball, player)
+    local ballSpeedThreshold: number = CalculateThreshold(ball, player)
+    local ballVelocity: Vector3? = GetBallVelocity(ball)
 
-		lastPressTime[ball] = tick()
-		isKeyPressed[ball] = true
-	elseif lastPressTime[ball] and (predictionTime > ballSpeedThreshold or not realBallAttribute or target ~= player.Name) then
-		isKeyPressed[ball] = false
-	end
+    if not ballVelocity then return false end
+
+    if predictionTime <= ballSpeedThreshold and tick() - lastPressTime > pressCooldown then
+        Vim:SendKeyEvent(true, Enum.KeyCode.F, false, nil)
+        Vim:SendKeyEvent(false, Enum.KeyCode.F, false, nil)
+        lastPressTime = tick()
+        return true
+    end
+
+    local reactionTime = (ball.Position - rootPart.Position).Magnitude / ballVelocity.Magnitude
+    
+	if reactionTime < 0.11 and tick() - lastPressTime > pressCooldown then
+        Vim:SendKeyEvent(true, Enum.KeyCode.F, false, nil)
+        Vim:SendKeyEvent(false, Enum.KeyCode.F, false, nil)
+        lastPressTime = tick()
+        return true
+    end
+
+    return false
 end
 
 local autoParryEnabled: boolean = true
@@ -393,81 +402,83 @@ local function UpdateTrackedBall(): nil
 end
 
 local function ShouldSkipParry(ball: BasePart): boolean
-	if not ball then return false end
+    if not ball then return false end
 
-	local velocity: Vector3? = GetBallVelocity(ball)
-	if not velocity then return false end
+    local velocity: Vector3? = GetBallVelocity(ball)
+    if not velocity then return false end
 
-	if IsBallCurving(ball, velocity) then
-		return true
-	end
+    if IsBallCurving(ball, velocity) then
+		print("ball curved")
+        return false
+    end
 
-	if math.abs(velocity.X - 704.603) < 0.01 
-		and math.abs(velocity.Y - 46.323) < 0.01 
-		and math.abs(velocity.Z - 164.818) < 0.01 then
+    if math.abs(velocity.X - 704.603) < 0.01 
+        and math.abs(velocity.Y - 46.323) < 0.01 
+        and math.abs(velocity.Z - 164.818) < 0.01 then
 
+        ignoredUntil[ball] = tick() + 1.62
+        return true
+    end
+    
+	if velocity.X > 200 and velocity.Magnitude > 200 then
+		local sfx: Sound? = ball:FindFirstChild("sfx")
+		
+		if not sfx or sfx.SoundId ~= "rbxassetid://18473465414" then
+			return false
+		end
+
+		if ignoredUntil[ball] and tick() < ignoredUntil[ball] then
+			return true
+		end
+	
 		ignoredUntil[ball] = tick() + 1.62
 		return true
 	end
 
-	if velocity.Y > 350 and velocity.Magnitude > 200 then
-		local sfx: Sound? = ball:FindFirstChild("sfx")
-		if sfx and sfx.SoundId == "rbxassetid://18473465414" then
-			if ignoredUntil[ball] and tick() < ignoredUntil[ball] then
-				return true
-			end
-
-			ignoredUntil[ball] = tick() + 1.62
-			return true
-		end
-	end
-
-	return false
+    return false
 end
 
 local function CheckBallsProximity(): nil
-	if not autoParryEnabled then return end
+    if not autoParryEnabled then return end
 
-	local player: Player = Players.LocalPlayer
-	local character: Model? = player and player.Character
+    local player: Player = Players.LocalPlayer
+    local character: Model? = player and player.Character
+    if not character then return end
 
-	if not character then return end
+    local rootPart: BasePart? = character:FindFirstChild("HumanoidRootPart")
+    if not rootPart then return end
 
-	local rootPart: BasePart? = character:FindFirstChild("HumanoidRootPart")
-	if not rootPart then return end
+    local allBalls = GetAllBalls()
+    if #allBalls == 0 then return end
 
-	UpdateTrackedBall()
+    if tick() - lastBallSpawnTime > 1 then
+        ResetConfigForNewBall()
+    end
 
-	if trackedBall and ShouldSkipParry(trackedBall) then
-		return
-	end
+    for _, ball: BasePart in ipairs(allBalls) do
+        if ignoredBalls[ball] then continue end
 
-	local allBalls = GetAllBalls()
+        TrackBallVelocity(ball)
 
-	if #allBalls > 0 and tick() - lastBallSpawnTime > 1 then
-		ResetConfigForNewBall()
-	end
+        if not ShouldSkipParry(ball) and CheckProximityToPlayer(ball, player) then
+            return
+        end
 
-	for _, ball: BasePart in ipairs(allBalls) do
-		if ignoredBalls[ball] then continue end
+        local ballVelocity: Vector3? = GetBallVelocity(ball)
+        if ballVelocity and ballVelocity.Magnitude > 50 then
+            local timeToImpact = ((ball.Position - rootPart.Position).Magnitude / ballVelocity.Magnitude)
 
-		local distance: number = (ball.Position - rootPart.Position).Magnitude
-
-		if distance < 20 or distance > 28.5 then
-			continue
-		end
-
-		TrackBallVelocity(ball)
-
-		if ShouldSkipParry(ball) then
-			print("Skipping parry due to conditions:", ball.Name)
-		else
-			CheckProximityToPlayer(ball, player)
-		end
-	end
+            if timeToImpact < 0.2 and tick() - lastPressTime > pressCooldown then
+                Vim:SendKeyEvent(true, Enum.KeyCode.F, false, nil)
+                Vim:SendKeyEvent(false, Enum.KeyCode.F, false, nil)
+                lastPressTime = tick()
+                return
+            end
+        end
+    end
 end
 
-local function ToggleAutoParry(state: boolean?): nil
+local function ToggleAutoParry(state: boolean?)
     if state == nil then
         autoParryEnabled = not autoParryEnabled
     else
@@ -476,18 +487,20 @@ local function ToggleAutoParry(state: boolean?): nil
 
     if autoParryEnabled then
         print("[AutoParry] Enabled")
+
         if checkBallsConnection then
             checkBallsConnection:Disconnect()
         end
         checkBallsConnection = RunService.Heartbeat:Connect(CheckBallsProximity)
     else
         print("[AutoParry] Disabled")
+
         if checkBallsConnection then
             checkBallsConnection:Disconnect()
             checkBallsConnection = nil
         end
     end
-end9
+end
 
 UserInputService.InputBegan:Connect(function(input: InputObject, gameProcessed: boolean)
     if gameProcessed or UserInputService:GetFocusedTextBox() then
@@ -496,5 +509,12 @@ UserInputService.InputBegan:Connect(function(input: InputObject, gameProcessed: 
 
     if input.KeyCode == Enum.KeyCode.M then
         ToggleAutoParry()
+    end
+end)
+
+RunService.Heartbeat:Connect(function()
+    if tick() - lastPrintTime >= printInterval then
+        PrintStatus()
+        lastPrintTime = tick()
     end
 end)

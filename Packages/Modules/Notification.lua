@@ -119,8 +119,8 @@ local notifications = {}; do
             Name = "notificationsFrame",
             Parent = notifications_screenGui,
             BackgroundTransparency = 1.000,
-            Size = UDim2.new(0, 236, 0, 0),
-            Position = notificationPositions[self.NotificationPosition] or UDim2.new(0.5, 0, 0.007, 0),
+            Size = UDim2.new(0, 300, 0, 0),
+            Position = notificationPositions[self.NotificationPosition] or UDim2.new(0.5, -150, 0.007, 0),
             AnchorPoint = Vector2.new(0.5, 0),
             ClipsDescendants = true
         })
@@ -193,7 +193,7 @@ local notifications = {}; do
             Name = "Notification",
             Parent = self.ui.notificationsFrame,
             BackgroundTransparency = 1.000,
-            Size = UDim2.new(0, 236, 0, 0),
+            Size = UDim2.new(1, 0, 0, 0),
             AutomaticSize = Enum.AutomaticSize.Y,
             Text = text,
             Font = self.TextFont,
@@ -201,7 +201,9 @@ local notifications = {}; do
             TextSize = self.TextSize,
             TextStrokeColor3 = self.TextStrokeColor,
             TextStrokeTransparency = self.TextStrokeTransparency,
-            TextWrapped = true
+            TextWrapped = true,
+            TextXAlignment = Enum.TextXAlignment.Center,
+            TextYAlignment = Enum.TextYAlignment.Center
         })
 
         insert(activeNotifications, notification)
@@ -209,7 +211,7 @@ local notifications = {}; do
         applyFadeIn(notification)
         
         self.ui.notificationsFrame_UIListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-            self.ui.notificationsFrame.Size = UDim2.new(0, 236, 0, self.ui.notificationsFrame_UIListLayout.AbsoluteContentSize.Y)
+            self.ui.notificationsFrame.Size = UDim2.new(0, 300, 0, self.ui.notificationsFrame_UIListLayout.AbsoluteContentSize.Y + 15)
         end)
 
         task.delay(self.NotificationLifetime, function()

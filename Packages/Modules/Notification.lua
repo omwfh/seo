@@ -132,7 +132,7 @@ local notifications: {[string]: any} = {}; do
         self.TextFont = typeof(font) == "string" and Enum.Font[font] or font
     end
   
-    notifications.BuildNotificationUI = function(self: {[string]: any}) -> ()
+    notifications.InitializeUI = function(self: {[string]: any}) -> ()
         if notifications_screenGui then 
             notifications_screenGui:Destroy()
         end

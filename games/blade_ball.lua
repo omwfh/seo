@@ -341,12 +341,12 @@ local function CheckProximityToPlayer(ball: BasePart, player: Player): boolean
 
     if not ballVelocity then return false end
 
-    if predictionTime <= ballSpeedThreshold and tick() - lastPressTime > pressCooldown then
-        Vim:SendKeyEvent(true, Enum.KeyCode.F, false, nil)
-        Vim:SendKeyEvent(false, Enum.KeyCode.F, false, nil)
-        lastPressTime = tick()
-        return true
-    end
+    if predictionTime <= ballSpeedThreshold and type(lastPressTime) == "number" and tick() - lastPressTime > pressCooldown then
+		Vim:SendKeyEvent(true, Enum.KeyCode.F, false, nil)
+		Vim:SendKeyEvent(false, Enum.KeyCode.F, false, nil)
+		lastPressTime = tick()
+		return true
+	end	
 
     local reactionTime = (ball.Position - rootPart.Position).Magnitude / ballVelocity.Magnitude
     

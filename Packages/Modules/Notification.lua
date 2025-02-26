@@ -48,9 +48,11 @@ local createObject: <T>(className: string, properties: {[string]: any}) -> T = f
     end
 
     local instance = newInstance(className)
+    
     for index, value in next, properties do 
         instance[index] = value 
     end
+   
     return instance
 end
 
@@ -66,7 +68,9 @@ local fadeObject: (object: GuiObject, onTweenCompleted: () -> ()) -> () = functi
         TextTransparency = 1,
         TextStrokeTransparency = 1
     })
+    
     tween.Completed:Connect(onTweenCompleted)
+    
     tween:Play()
 end
 
@@ -87,6 +91,7 @@ local notifications: {[string]: any} = {}; do
         end
 
         setmetatable(notificationSettings, {__index = notifications})
+        
         return notificationSettings
     end
 
@@ -94,6 +99,7 @@ local notifications: {[string]: any} = {}; do
         if not number or typeof(number) ~= "number" then
             error("[ SEO ] Invalid number: Expected number, got " .. typeof(number))
         end
+        
         self.NotificationLifetime = number 
     end
 
@@ -101,6 +107,7 @@ local notifications: {[string]: any} = {}; do
         if not color3 or typeof(color3) ~= "Color3" then
             error("[ SEO ] Invalid Color3: Expected Color3, got " .. typeof(color3))
         end
+        
         self.TextColor = color3 
     end
 
@@ -108,6 +115,7 @@ local notifications: {[string]: any} = {}; do
         if not number or typeof(number) ~= "number" then
             error("[ SEO ] Invalid TextSize: Expected number, got " .. typeof(number))
         end
+        
         self.TextSize = number 
     end
 
@@ -115,6 +123,7 @@ local notifications: {[string]: any} = {}; do
         if not number or typeof(number) ~= "number" then
             error("[ SEO ] Invalid TextStrokeTransparency: Expected number, got " .. typeof(number))
         end
+        
         self.TextStrokeTransparency = number 
     end
 
@@ -122,6 +131,7 @@ local notifications: {[string]: any} = {}; do
         if not color3 or typeof(color3) ~= "Color3" then
             error("[ SEO ] Invalid TextStrokeColor: Expected Color3, got " .. typeof(color3))
         end
+        
         self.TextStrokeColor = color3 
     end
 
@@ -165,7 +175,9 @@ local notifications: {[string]: any} = {}; do
             error("[ SEO ] Invalid text: Expected string, got " .. typeof(text))
         end
     
-        if not self.ui.notificationsFrame then self:BuildNotificationUI() end
+        if not self.ui or not self.ui.notificationsFrame then
+            self:BuildNotificationUI()
+        end
     
         local children = self.ui.notificationsFrame:GetChildren()
         
@@ -180,7 +192,7 @@ local notifications: {[string]: any} = {}; do
             Parent = self.ui.notificationsFrame,
             BackgroundColor3 = categoryColor,
             BackgroundTransparency = 0.2,
-            Size = UDim2.new(0, 222, 0, 0),
+            Size = UDim2.new(0, 222, 0, 20),
             Text = "",
             Font = self.TextFont or Enum.Font.SourceSans,
             TextColor3 = self.TextColor or fromRGB(255, 255, 255),

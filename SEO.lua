@@ -26,7 +26,7 @@ local NotifLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/omwf
 local Notification = NotifLib.new({
     NotificationLifetime = 5,
     MaxNotifications = 5,
-    NotificationPadding = UDim.new(0, 6.5),
+    NotificationPadding = UDim.new(0, 3.5),
     NotificationPosition = "Top"
 })
 

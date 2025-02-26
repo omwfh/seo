@@ -75,7 +75,7 @@ local fadeObject: (object: GuiObject, onTweenCompleted: () -> ()) -> () = functi
 end
 
 local notifications: {[string]: any} = {}; do 
-    notifications.new = function(settings: {[string]: any}) -> {[string]: any}
+    notifications.new = function(settings: {[string]: any}): {[string]: any}
         if not settings or typeof(settings) ~= "table" then
             error("[ SEO ] Invalid settings: Expected table, got " .. typeof(settings))
         end

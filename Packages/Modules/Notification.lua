@@ -120,19 +120,19 @@ local notifications = {}; do
             Parent = notifications_screenGui,
             BackgroundTransparency = 1.000,
             Position = notificationPositions[self.NotificationPosition] or notificationPositions[defaultTemplate.NotificationPosition],
-            Size = UDim2.new(0, 236, 0, 0),
+            Size = UDim2.new(0, 600, 0, 0),
             ClipsDescendants = true
         })
 
         self.ui.notificationsFrame_UIListLayout = createElement.new("UIListLayout", {
             Name = "notificationsFrame_UIListLayout",
             Parent = self.ui.notificationsFrame,
-            Padding = UDim.new(0, 5),
+            Padding = UDim.new(0, 10),
             SortOrder = Enum.SortOrder.LayoutOrder
         })
 
         self.ui.notificationsFrame_UIListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-            self.ui.notificationsFrame.Size = UDim2.new(0, 236, 0, self.ui.notificationsFrame_UIListLayout.AbsoluteContentSize.Y)
+            self.ui.notificationsFrame.Size = UDim2.new(0, 600, 0, self.ui.notificationsFrame_UIListLayout.AbsoluteContentSize.Y)
         end)
     end
 

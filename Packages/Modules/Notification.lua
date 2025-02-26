@@ -14,7 +14,7 @@ local notificationPositions: {[string]: UDim2} = {
     ["Middle"] = UDim2.new(0.445, 0, 0.7, 0),
     ["MiddleRight"] = UDim2.new(0.85, 0, 0.7, 0),
     ["MiddleLeft"] = UDim2.new(0.01, 0, 0.7, 0),
-    ["Top"] = UDim2.new(0.45, 0, 0.005, 0),
+    ["Top"] = UDim2.new(0.445, 0, 0.007, 0),
     ["TopLeft"] = UDim2.new(0.06, 0, 0.001, 0),
     ["TopRight"] = UDim2.new(0.8, 0, 0.001, 0),
 }

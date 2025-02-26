@@ -40,8 +40,27 @@ ScreenGui.Name = "PingDisplay"
 
 protectScreenGui(ScreenGui)
 
+local ClientInfo: Frame = newInstance("Frame")
+ClientInfo.Name = "ClientInfo"
+ClientInfo.Parent = ScreenGui
+ClientInfo.Position = UDim2.new(0.005, 0, 1, -54)
+ClientInfo.Size = UDim2.new(0, 119, 0, 54)
+ClientInfo.SizeConstraint = Enum.SizeConstraint.RelativeXY
+ClientInfo.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+ClientInfo.BackgroundTransparency = 1
+ClientInfo.BorderColor3 = Color3.fromRGB(0, 0, 0)
+ClientInfo.BorderMode = Enum.BorderMode.Outline
+ClientInfo.BorderSizePixel = 0
+ClientInfo.Visible = true
+ClientInfo.ZIndex = 1
+
+local UISizeConstraint: UISizeConstraint = newInstance("UISizeConstraint")
+UISizeConstraint.Parent = ClientInfo
+UISizeConstraint.MaxSize = Vector2.new(math.huge, math.huge)
+UISizeConstraint.MinSize = Vector2.new(0, 0)
+
 local TextLabel: TextLabel = newInstance("TextLabel")
-TextLabel.Parent = ScreenGui
+TextLabel.Parent = ClientInfo
 TextLabel.Name = "PingLabel"
 TextLabel.Position = UDim2.new(-0.008, 0, 0.572, 0)
 TextLabel.Size = UDim2.new(0, 200, 0, 14)

@@ -191,7 +191,7 @@ local notifications: {[string]: any} = {}; do
             Name = "notification",
             Parent = self.ui.notificationsFrame,
             BackgroundColor3 = categoryColor,
-            BackgroundTransparency = 0.2,
+            BackgroundTransparency = 1,
             Size = UDim2.new(0, 222, 0, 20),
             Text = "",
             Font = self.TextFont or Enum.Font.SourceSans,
@@ -217,7 +217,7 @@ local notifications: {[string]: any} = {}; do
         task.spawn(function()
             for i = 1, #text do
                 notification.Text = string.sub(text, 1, i)
-                task.wait(0.03)
+                task.wait(0.016)
             end
         end)
     

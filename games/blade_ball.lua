@@ -122,13 +122,11 @@ local function IsAccelerationHigh(currentVelocity: Vector3): boolean
 	local dynamicAccelerationThreshold: number = math.clamp(5 + (currentVelocity.Magnitude / 15), 5, 15)
 
 	if accDiff > dynamicAccelerationThreshold then
-		print("[AutoParry] Sudden acceleration detected:", accDiff)
 		return true
 	end
 
 	return false
 end
-
 
 local function IsBallCurving(ball: BasePart, currentVelocity: Vector3): boolean
 	if not ball then return false end
@@ -518,3 +516,5 @@ RunService.Heartbeat:Connect(function()
         lastPrintTime = tick()
     end
 end)
+
+PrintStatus()

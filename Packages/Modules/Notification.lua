@@ -119,8 +119,8 @@ local notifications = {}; do
             Name = "notificationsFrame",
             Parent = notifications_screenGui,
             BackgroundTransparency = 1.000,
-            Position = notificationPositions[self.NotificationPosition] or UDim2.new(0.5, -300 / 2, 0.007, 0),
             Size = UDim2.new(0, 600, 0, 0),
+            Position = notificationPositions[self.NotificationPosition] or UDim2.new(0.5, 0, 0.007, 0),
             AnchorPoint = Vector2.new(0.5, 0),
             ClipsDescendants = true
         })

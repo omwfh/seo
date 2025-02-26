@@ -22,8 +22,8 @@ local RunService: RunService = game:GetService("RunService")
 local MarketplaceService: MarketplaceService = game:GetService("MarketplaceService")
 local StarterGui: StarterGui = game:GetService("StarterGui")
 
-local NotificationModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/Packages/Modules/Notification.lua"))()
-local Notification = NotificationModule.Create({
+local NotifLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/Packages/Modules/Notification.lua"))()
+local Notification = NotifLib.new({
     NotificationLifetime = 5,
     MaxNotifications = 5,
     NotificationPadding = UDim.new(0, 10),

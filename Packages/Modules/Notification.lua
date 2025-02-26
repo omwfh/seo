@@ -95,7 +95,7 @@ local notifications: {[string]: any} = {}; do
         return notificationSettings
     end
 
-    notifications.SetNotificationLifetime = function(self: {[string]: any}, number: number) -> ()
+    notifications.SetNotificationLifetime = function(self: {[string]: any}, number: number): void
         if not number or typeof(number) ~= "number" then
             error("[ SEO ] Invalid number: Expected number, got " .. typeof(number))
         end
@@ -103,7 +103,7 @@ local notifications: {[string]: any} = {}; do
         self.NotificationLifetime = number 
     end
 
-    notifications.SetTextColor = function(self: {[string]: any}, color3: Color3) -> ()
+    notifications.SetTextColor = function(self: {[string]: any}, color3: Color3): void
         if not color3 or typeof(color3) ~= "Color3" then
             error("[ SEO ] Invalid Color3: Expected Color3, got " .. typeof(color3))
         end
@@ -111,7 +111,7 @@ local notifications: {[string]: any} = {}; do
         self.TextColor = color3 
     end
 
-    notifications.SetTextSize = function(self: {[string]: any}, number: number) -> ()
+    notifications.SetTextSize = function(self: {[string]: any}, number: number): void
         if not number or typeof(number) ~= "number" then
             error("[ SEO ] Invalid TextSize: Expected number, got " .. typeof(number))
         end
@@ -119,7 +119,7 @@ local notifications: {[string]: any} = {}; do
         self.TextSize = number 
     end
 
-    notifications.SetTextStrokeTransparency = function(self: {[string]: any}, number: number) -> ()
+    notifications.SetTextStrokeTransparency = function(self: {[string]: any}, number: number): void
         if not number or typeof(number) ~= "number" then
             error("[ SEO ] Invalid TextStrokeTransparency: Expected number, got " .. typeof(number))
         end
@@ -127,7 +127,7 @@ local notifications: {[string]: any} = {}; do
         self.TextStrokeTransparency = number 
     end
 
-    notifications.SetTextStrokeColor = function(self: {[string]: any}, color3: Color3) -> ()
+    notifications.SetTextStrokeColor = function(self: {[string]: any}, color3: Color3): void
         if not color3 or typeof(color3) ~= "Color3" then
             error("[ SEO ] Invalid TextStrokeColor: Expected Color3, got " .. typeof(color3))
         end
@@ -135,14 +135,14 @@ local notifications: {[string]: any} = {}; do
         self.TextStrokeColor = color3 
     end
 
-    notifications.SetTextFont = function(self: {[string]: any}, font: string | Enum.Font) -> ()
+    notifications.SetTextFont = function(self: {[string]: any}, font: string | Enum.Font): void
         if not font or (typeof(font) ~= "string" and typeof(font) ~= "EnumItem") then
             error("[ SEO ] Invalid font: Expected string or EnumItem, got " .. typeof(font))
         end
         self.TextFont = typeof(font) == "string" and Enum.Font[font] or font
     end
   
-    notifications.InitializeUI = function(self: {[string]: any}) -> ()
+    notifications.InitializeUI = function(self: {[string]: any}): void
         if notifications_screenGui then 
             notifications_screenGui:Destroy()
         end
@@ -170,7 +170,7 @@ local notifications: {[string]: any} = {}; do
         })
     end
 
-    notifications.Notify = function(self: {[string]: any}, text: string, category: string?) -> ()
+    notifications.Notify = function(self: {[string]: any}, text: string, category: string?): void
         if not text or typeof(text) ~= "string" then
             error("[ SEO ] Invalid text: Expected string, got " .. typeof(text))
         end

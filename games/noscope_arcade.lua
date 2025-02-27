@@ -1,7 +1,7 @@
 getgenv().Settings = {
-    Fov: number = 85,
-    FovCircle: boolean = true,
-    HitChance: number = 100
+    Fov = 85,
+    FovCircle = true,
+    HitChance = 100
 }
 
 local Camera: Camera = workspace.CurrentCamera

@@ -38,7 +38,7 @@ Notification:InitializeUI()
 
 local miscellaneous = {
     ["https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/Misc/ESP.lua"] = false,
-    ["https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/Misc/PingUI.lua"] = true,
+    ["https://raw.githubusercontent.com/omwfh/seo/refs/heads/main/Misc/PingUI.lua"] = false,
 }
 
 NotifyUser = function(text: string, type: string): nil

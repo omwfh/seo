@@ -1,28 +1,30 @@
 setfpscap(240)
 
-local RunService = game:GetService("RunService")
-local Players = game:GetService("Players")
-local Workspace = game:GetService("Workspace")
-local Vim = game:GetService("VirtualInputManager")
-local ballFolder = Workspace:WaitForChild("Balls")
-local trainingFolder = Workspace:WaitForChild("TrainingBalls")
+local RunService: RunService = game:GetService("RunService")
+local Players: Players = game:GetService("Players")
+local Workspace: Workspace = game:GetService("Workspace")
+local Vim: VirtualInputManager = game:GetService("VirtualInputManager")
+local UserInputService: UserInputService = game:GetService("UserInputService")
 
-local pressCooldown = 0
-local lastPressTime = {}
-local isKeyPressed = {}
+local ballFolder: Folder = Workspace:WaitForChild("Balls")
+local trainingFolder: Folder = Workspace:WaitForChild("TrainingBalls")
 
-local configHighPing = {
-    value1 = 0.107,
-    value2 = 0.0065,
-    value3 = 0.0115,
-    value4 = 0.29
+local pressCooldown: number = 0
+local lastPressTime: { [Instance]: number } = {}
+local isKeyPressed: { [Instance]: boolean } = {}
+
+local configHighPing: { value1: number, value2: number, value3: number, value4: number } = {
+	value1 = 0.106,
+	value2 = 0.0063,
+	value3 = 0.0108,
+	value4 = 0.3
 }
 
-local configLowPing = {
-    value1 = 0.105,
-    value2 = 0.006,
-    value3 = 0.01,
-    value4 = 0.33
+local configLowPing: { value1: number, value2: number, value3: number, value4: number } = {
+	value1 = 0.108,
+	value2 = 0.0056,
+	value3 = 0.012,
+	value4 = 0.33
 }
 
 local currentConfig = nil

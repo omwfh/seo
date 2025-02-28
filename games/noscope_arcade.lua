@@ -10,6 +10,17 @@ local RunService: RunService = game:GetService("RunService")
 local LocalPlayer: Player = Players.LocalPlayer
 local Mouse: Mouse = LocalPlayer:GetMouse()
 
+local function IsVisible(target: BasePart): boolean
+    local origin: Vector3 = Camera.CFrame.Position
+    local direction: Vector3 = (target.Position - origin).Unit * (target.Position - origin).Magnitude
+    local raycastParams: RaycastParams = RaycastParams.new()
+    raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+    raycastParams.FilterDescendantsInstances = {LocalPlayer.Character, Camera}
+
+    local result: RaycastResult? = workspace:Raycast(origin, direction, raycastParams)
+    return result == nil or result.Instance == target
+end
+
 local function InLineOfSight(position: Vector3, ...): boolean
     return #Camera:GetPartsObscuringTarget({position}, {Camera, LocalPlayer.Character, ...}) == 0
 end
@@ -17,13 +28,13 @@ end
 local function GetClosestTarget(fov: number): Player?
     local closestTarget: Player? = nil
     local shortestDistance: number = math.huge
-    
+
     for _, player: Player in pairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
-            if InLineOfSight(player.Character.Head.Position, player.Character) then
+            if InLineOfSight(player.Character.Head.Position, player.Character) and IsVisible(player.Character.Head) then
                 local screenPosition, onScreen = Camera:WorldToScreenPoint(player.Character.HumanoidRootPart.Position)
                 local distance: number = (Vector2.new(screenPosition.X, screenPosition.Y) - Vector2.new(Mouse.X, Mouse.Y)).Magnitude
-                
+
                 if distance < shortestDistance then
                     shortestDistance = distance
                     closestTarget = player
@@ -31,31 +42,30 @@ local function GetClosestTarget(fov: number): Player?
             end
         end
     end
-    
+
     return closestTarget
 end
 
 local function GetNearestHitbox(target: Player): BasePart?
     if not target or not target.Character then return nil end
-    
+
     local hitboxes: {string} = {"Head", "HumanoidRootPart", "UpperTorso", "LowerTorso"}
     local closestPart: BasePart? = nil
     local shortestDistance: number = math.huge
     local screenMouse: Vector2 = Vector2.new(Mouse.X, Mouse.Y)
-    
+
     for _, partName: string in pairs(hitboxes) do
         local part: BasePart? = target.Character:FindFirstChild(partName)
-        if part then
+        if part and IsVisible(part) then
             local screenPosition, onScreen = Camera:WorldToScreenPoint(part.Position)
             local distance: number = (Vector2.new(screenPosition.X, screenPosition.Y) - screenMouse).Magnitude
-            
             if distance < shortestDistance then
                 shortestDistance = distance
                 closestPart = part
             end
         end
     end
-    
+
     return closestPart
 end
 
@@ -82,14 +92,14 @@ RunService.Stepped:Connect(function()
     CircleOutline.Color = Color3.new()
     CircleOutline.Visible = getgenv().Settings.FovCircle
     CircleOutline.ZIndex = 1
-    
+
     Target = GetClosestTarget(getgenv().Settings.Fov)
 end)
 
 local OldHook; OldHook = hookmetamethod(game, "__namecall", function(self, ...)
     local args: {any} = {...}
     local method: string = getnamecallmethod()
-    
+        
     if not checkcaller() and method == "FireServer" then
         if self.Name == "0+." then
             args[1].MessageWarning = {}
@@ -100,7 +110,7 @@ local OldHook; OldHook = hookmetamethod(game, "__namecall", function(self, ...)
             if Target and Target.Character and Target.Character.Humanoid and Target.Character.Humanoid.Health ~= 0 then
                 if math.random(1, 100) <= getgenv().Settings.HitChance then
                     local hitbox: BasePart? = math.random(1, 100) <= 60 and Target.Character.Head or GetNearestHitbox(Target)
-                    
+
                     if hitbox then
                         args[3] = Target.Character
                         args[4] = hitbox
@@ -110,6 +120,6 @@ local OldHook; OldHook = hookmetamethod(game, "__namecall", function(self, ...)
             end
         end
     end
-    
+
     return OldHook(self, unpack(args))
 end)

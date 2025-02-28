@@ -7,7 +7,7 @@ local v1: Player = Players.LocalPlayer
 local v2: Camera = workspace.CurrentCamera
 
 local v3: string = "Targets"
-local v4: number = 0.039
+local v4: number = 0.048
 local v5: Enum.UserInputType = Enum.UserInputType.MouseButton2
 local v6: boolean = true
 local v7: boolean = false

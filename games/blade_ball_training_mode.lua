@@ -20,6 +20,7 @@ local Configs = {
         value3 = 0.0115,
         value4 = 0.29
     },
+    
     LowPing = {
         value1 = 0.107,
         value2 = 0.0058,
@@ -31,6 +32,8 @@ local Configs = {
 local currentConfig = nil
 local lastConfigUpdate = tick()
 local configUpdateInterval = 0.2
+
+local kalmanData = {}
 
 local function GetPlayerPing(): number
     local stats: Stats = game:GetService("Stats")
@@ -45,47 +48,91 @@ local function UpdateConfigBasedOnPing(ping: number)
     end
 end
 
+currentConfig = (function()
+    local initialPing = GetPlayerPing()
+    if initialPing > 100 then
+        return Configs.HighPing
+    else
+        return Configs.LowPing
+    end
+end)()
+
 local function GetBallVelocity(ball: BasePart): Vector3?
     if not ball then return nil end
 
     local success, velocity = pcall(function()
         return ball.AssemblyLinearVelocity
     end)
-    
     if success and typeof(velocity) == "Vector3" then
         return velocity
     end
 
+    local vectorVelocity: Vector3Value? = ball:FindFirstChild("VectorVelocity")
+   
+    if vectorVelocity and vectorVelocity:IsA("Vector3Value") then
+        return vectorVelocity.Value
+    end
+
     local zoomies: Vector3Value? = ball:FindFirstChild("zoomies")
-    
-	if zoomies and zoomies:IsA("Vector3Value") then
+    if zoomies and zoomies:IsA("Vector3Value") then
         return zoomies.Value
     end
 
     return ball.Velocity
 end
 
+local function KalmanPredict(ball: BasePart, dt: number): Vector3
+    if not ball then return Vector3.zero end
+
+    if not kalmanData[ball] then
+        local baseError = math.abs(currentConfig.value1) * 10
+        local processNoiseScale = math.sqrt(currentConfig.value2) * 0.1
+        local measurementNoiseScale = math.log(currentConfig.value3 + 1) * 0.05
+
+        kalmanData[ball] = {
+            predictedVelocity = GetBallVelocity(ball) or Vector3.zero,
+            estimatedError = Vector3.new(baseError, baseError, baseError),
+            processNoise = Vector3.new(processNoiseScale, processNoiseScale, processNoiseScale),
+            measurementNoise = Vector3.new(measurementNoiseScale, measurementNoiseScale, measurementNoiseScale)
+        }
+    end
+
+    local data = kalmanData[ball]
+    local measuredVelocity = GetBallVelocity(ball) or Vector3.zero
+
+    local kalmanGain = data.estimatedError / (data.estimatedError + data.measurementNoise)
+
+    data.predictedVelocity = data.predictedVelocity + kalmanGain * (measuredVelocity - data.predictedVelocity)
+
+    data.estimatedError = (Vector3.new(1, 1, 1) - kalmanGain) * data.estimatedError + data.processNoise
+
+    local acceleration = (measuredVelocity - data.predictedVelocity) / dt
+    local predictedVelocity = data.predictedVelocity + acceleration * dt
+
+    return predictedVelocity
+end
+
 local function ResolveVelocity(ball: BasePart, ping: number): Vector3
     local rtt = ping / 1000
-    
+    local dt = RunService.Heartbeat:Wait()
+
     local gravity = Vector3.new(0, -Workspace.Gravity, 0)
     local airDensity = 1.225
     local dragCoefficient = 0.47
     local ballRadius = ball.Size.magnitude / 2
     local crossSectionalArea = math.pi * (ballRadius ^ 2)
-   
-    local velocity = GetBallVelocity(ball) or Vector3.zero
+
+    local velocity = KalmanPredict(ball, dt)
     local speed = velocity.Magnitude
     local direction = speed > 0 and velocity.Unit or Vector3.zero
 
     local dragForceMagnitude = 0.5 * airDensity * (speed ^ 2) * dragCoefficient * crossSectionalArea
     local dragForce = -direction * dragForceMagnitude
- 
+
     local mass = ball:GetMass()
     local acceleration = (dragForce / mass) + gravity
 
     local predictedVelocity = velocity + (acceleration * rtt)
-
     local predictedPosition = ball.Position + (velocity * rtt) + (0.5 * acceleration * (rtt ^ 2))
 
     return predictedPosition
@@ -161,7 +208,9 @@ local function CalculateThreshold(ball: BasePart, player: Player): number
 
     local logDistanceFactor: number = math.log(distance + 1) * currentConfig.value3
 
-    local velocityFactor: number = math.exp(-velocity * currentConfig.value2)
+    local velocityFactor: number = math.sqrt(math.abs(velocity)) * currentConfig.value2
+
+    local velocityScalingFactor: number = math.tanh(velocity / 50) * 0.2
 
     local mass: number = ball:GetMass()
     local kineticEnergy: number = 0.5 * mass * (velocity ^ 2)
@@ -172,7 +221,7 @@ local function CalculateThreshold(ball: BasePart, player: Player): number
 
     local baseThreshold: number = (currentConfig.value1 + pingCompensation) * adaptivePingFactor
 
-    local threshold: number = math.max(baseThreshold, currentConfig.value4 - velocityFactor - logDistanceFactor - kineticEnergyFactor)
+    local threshold: number = math.max(baseThreshold, currentConfig.value4 - velocityFactor - logDistanceFactor - kineticEnergyFactor - velocityScalingFactor)
 
     return threshold
 end
@@ -183,7 +232,12 @@ local function CheckProximityToPlayer(ball: BasePart, player: Player): nil
     local target = ball:GetAttribute("target")
 
     local ballSpeedThreshold = CalculateThreshold(ball, player)
-    local shouldPress = predictionTime <= ballSpeedThreshold and realBallAttribute and target == player.Name
+    
+    local velocity = GetBallVelocity(ball) or Vector3.zero
+    local speed = velocity.Magnitude
+    local dynamicAdjustment = math.tanh(speed / 80) * 0.15
+
+    local shouldPress = predictionTime <= (ballSpeedThreshold - dynamicAdjustment) and realBallAttribute and target == player.Name
 
     if shouldPress and not isKeyPressed[ball] and (not lastPressTime[ball] or tick() - lastPressTime[ball] > pressCooldown) then
         Vim:SendKeyEvent(true, Enum.KeyCode.F, false, nil)

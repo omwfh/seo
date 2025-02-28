@@ -1,6 +1,6 @@
 getgenv().Settings = {
-    Fov = 85,
-    FovCircle = true,
+    Fov = 60,
+    FovCircle = false,
     HitChance = 100
 }
 

@@ -7,12 +7,14 @@ local v1: Player = Players.LocalPlayer
 local v2: Camera = workspace.CurrentCamera
 
 local v3: string = "Targets"
-local v4: number = 0.048
+local v4: number = 0.053
 local v5: Enum.UserInputType = Enum.UserInputType.MouseButton2
 local v6: boolean = true
 local v7: boolean = false
 local v8: Part? = nil
 local v9: Vector3 = Vector3.zero
+
+print(v4)
 
 local function GetTargets(): {Part}
     local v10: Folder? = workspace:FindFirstChild(v3)

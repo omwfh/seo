@@ -106,7 +106,7 @@ local function KalmanPredict(ball: BasePart, dt: number): Vector3
     data.estimatedError = (Vector3.new(1, 1, 1) - kalmanGain) * data.estimatedError + data.processNoise
 
     local acceleration = (measuredVelocity - data.predictedVelocity) / dt
-    local predictedVelocity = data.predictedVelocity + (acceleration * dt * 0.95)
+    local predictedVelocity = data.predictedVelocity + (acceleration * dt * 1.5)
 
     kalmanData[ball] = data
     return predictedVelocity
@@ -117,7 +117,7 @@ local function ResolveVelocity(ball: BasePart, ping: number): Vector3
     local dt = 1 / 240
 
     local gravity = Vector3.new(0, -Workspace.Gravity, 0)
-    local airDensity = 1.225
+    local airDensity = 1.885
     local dragCoefficient = 0.47
     local ballRadius = ball.Size.magnitude / 2
     local crossSectionalArea = math.pi * (ballRadius ^ 2)

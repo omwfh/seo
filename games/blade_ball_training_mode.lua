@@ -4,6 +4,8 @@ local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local Vim = game:GetService("VirtualInputManager")
+local Stats = game:GetService("Stats")
+
 local ballFolder = Workspace:WaitForChild("Balls")
 local trainingFolder = Workspace:WaitForChild("TrainingBalls")
 
@@ -11,240 +13,214 @@ local pressCooldown = 0
 local lastPressTime = {}
 local isKeyPressed = {}
 
-local configHighPing = {
-    value1 = 0.107,
-    value2 = 0.0065,
-    value3 = 0.0115,
-    value4 = 0.29
-}
-
-local configLowPing = {
-    value1 = 0.107,
-    value2 = 0.0058,
-    value3 = 0.01,
-    value4 = 0.31
+local Configs = {
+    HighPing = {
+        value1 = 0.107,
+        value2 = 0.0065,
+        value3 = 0.0115,
+        value4 = 0.29
+    },
+    LowPing = {
+        value1 = 0.107,
+        value2 = 0.0058,
+        value3 = 0.01,
+        value4 = 0.31
+    }
 }
 
 local currentConfig = nil
 local lastConfigUpdate = tick()
-local configUpdateInterval = .2
+local configUpdateInterval = 0.2
 
-local function printValues()
-    print("Current Config:")
-    print("-----------------------------------------")
-    print("Base Threshold: " .. currentConfig.value1)
-    print("Velocity Factor: " .. currentConfig.value2)
-    print("Distance Factor: " .. currentConfig.value3)
-    print("math.max: " .. currentConfig.value4)
-    print("-----------------------------------------")
+local function GetPlayerPing(): number
+    local stats: Stats = game:GetService("Stats")
+	local networkStats: NetworkStats = stats.Network
+	return networkStats.ServerStatsItem["Data Ping"]:GetValue()
 end
 
-local baseValue1: number = configLowPing.value1
-local originalValue2: number = configLowPing.value2
-local originalValue3: number = configLowPing.value3
-
-local peakTracker = {}
-
-local function getPlayerPing()
-    local stats = game:GetService("Stats")
-    local networkStats = stats.Network
-    return networkStats.ServerStatsItem["Data Ping"]:GetValue()
-end
-
-local function updateConfigBasedOnPing(ping)
+local function UpdateConfigBasedOnPing(ping: number)
     if tick() - lastConfigUpdate > configUpdateInterval then
-        if ping > 100 then
-            currentConfig = configHighPing
-        else
-            currentConfig = configLowPing
-        end
+        currentConfig = ping > 100 and Configs.HighPing or Configs.LowPing
         lastConfigUpdate = tick()
     end
 end
 
-currentConfig = (function()
-    local initialPing = getPlayerPing()
-    if initialPing > 100 then
-        return configHighPing
-    else
-        return configLowPing
-    end
-end)()
-
 local function GetBallVelocity(ball: BasePart): Vector3?
-    local velocity: Vector3?
+    if not ball then return nil end
 
-    local success, result = pcall(function()
+    local success, velocity = pcall(function()
         return ball.AssemblyLinearVelocity
     end)
-
-    if success and typeof(result) == "Vector3" then
-        velocity = result
-    else
-        local zoomies = ball:FindFirstChild("zoomies")
-        if zoomies and zoomies:IsA("Vector3Value") then
-            velocity = zoomies.Value
-        end
+    
+    if success and typeof(velocity) == "Vector3" then
+        return velocity
     end
 
-    return velocity
-end
-
-local function GetClosestPlayerDistance(ball: BasePart): number?
-    local player = Players.LocalPlayer
-    local character = player and player.Character
-    if not character then return nil end
-
-    local rootPart = character:FindFirstChild("HumanoidRootPart")
-    if not rootPart then return nil end
-
-    local closestDistance = nil
-
-    for _, otherPlayer in ipairs(Players:GetPlayers()) do
-        if otherPlayer ~= player and otherPlayer.Character then
-            local otherRoot = otherPlayer.Character:FindFirstChild("HumanoidRootPart")
-            if otherRoot then
-                local distance = (otherRoot.Position - ball.Position).Magnitude
-                if not closestDistance or distance < closestDistance then
-                    closestDistance = distance
-                end
-            end
-        end
+    local zoomies: Vector3Value? = ball:FindFirstChild("zoomies")
+    
+	if zoomies and zoomies:IsA("Vector3Value") then
+        return zoomies.Value
     end
 
-    return closestDistance
+    return ball.Velocity
 end
 
-local function resolveVelocity(ball, ping)
-    local currentPosition = ball.Position
-    local currentVelocity = GetBallVelocity(ball) or Vector3.zero
+local function ResolveVelocity(ball: BasePart, ping: number): Vector3
     local rtt = ping / 1000
-    return currentPosition + currentVelocity * rtt
+    
+    local gravity = Vector3.new(0, -Workspace.Gravity, 0)
+    local airDensity = 1.225
+    local dragCoefficient = 0.47
+    local ballRadius = ball.Size.magnitude / 2
+    local crossSectionalArea = math.pi * (ballRadius ^ 2)
+   
+    local velocity = GetBallVelocity(ball) or Vector3.zero
+    local speed = velocity.Magnitude
+    local direction = speed > 0 and velocity.Unit or Vector3.zero
+
+    local dragForceMagnitude = 0.5 * airDensity * (speed ^ 2) * dragCoefficient * crossSectionalArea
+    local dragForce = -direction * dragForceMagnitude
+ 
+    local mass = ball:GetMass()
+    local acceleration = (dragForce / mass) + gravity
+
+    local predictedVelocity = velocity + (acceleration * rtt)
+
+    local predictedPosition = ball.Position + (velocity * rtt) + (0.5 * acceleration * (rtt ^ 2))
+
+    return predictedPosition
 end
 
-local function calculatePredictionTime(ball, player)
-    local rootPart = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-    
-    if rootPart then
-        local ping = getPlayerPing()
-        updateConfigBasedOnPing(ping)
-       
-        local predictedPosition = resolveVelocity(ball, ping)
-        local relativePosition = predictedPosition - rootPart.Position
-        local velocity = GetBallVelocity(ball) or Vector3.zero
-        velocity = velocity + rootPart.Velocity
-
-        local a = ball.Size.magnitude / 2
-        local b = relativePosition.magnitude
-        local c = math.sqrt(a * a + b * b)
-
-        return (c - a) / velocity.magnitude
-    end
-    
-    return math.huge
-end
-
-local function calculateThreshold(ball, player)
+local function CalculatePredictionTime(ball: BasePart, player: Player): number
     local rootPart = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
     if not rootPart then return math.huge end
 
-    local ping = getPlayerPing() / 1000
-   
-    updateConfigBasedOnPing(ping * 1000)
-    
-    local distance = (ball.Position - rootPart.Position).Magnitude
+    local ping = GetPlayerPing()
+    UpdateConfigBasedOnPing(ping)
 
-    local pingCompensation = ping * 1.78
-    local baseThreshold = currentConfig.value1 + pingCompensation
+    local predictedPosition = ResolveVelocity(ball, ping)
+    local relativePosition = predictedPosition - rootPart.Position
 
-    local velocityFactor = math.pow((GetBallVelocity(ball) or Vector3.zero).magnitude, 1.3) * currentConfig.value2
-    local distanceFactor = distance * currentConfig.value3
+    local ballVelocity = GetBallVelocity(ball) or Vector3.zero
+    local playerVelocity = rootPart.Velocity
+    local relativeVelocity = ballVelocity - playerVelocity
 
-    return math.max(baseThreshold, currentConfig.value4 - velocityFactor - distanceFactor)
-end
+    local gravity = Vector3.new(0, -Workspace.Gravity, 0)
+    local ballRadius = ball.Size.magnitude / 2
+    local distance = relativePosition.Magnitude
+    local speed = relativeVelocity.Magnitude
+    local direction = speed > 0 and relativeVelocity.Unit or Vector3.zero
 
-local function TrackBallVelocity(ball: BasePart)
-    local velocity = GetBallVelocity(ball)
-    
-    if not velocity then return end
+    local verticalVelocity = relativeVelocity.Y
+    local initialHeightDifference = relativePosition.Y
+    local a = 0.5 * gravity.Y
+    local b = verticalVelocity
+    local c = -initialHeightDifference
 
-    local currentSpeed = velocity.Magnitude
-    local lastSpeed = peakTracker[ball] or currentSpeed
-    local ping = getPlayerPing() / 1000
-    local velocityFactor = math.min(velocity.Magnitude * 0.00002, 0.002)
-    local pingFactor = math.min(ping * 0.0003, 0.002)
-    local closestDistance = GetClosestPlayerDistance(ball)
+    local discriminant = (b * b) - (4 * a * c)
+    local timeToImpact
 
-    currentConfig.value1 = baseValue1
-    currentConfig.value2 = originalValue2
-    currentConfig.value3 = originalValue3
+    if discriminant >= 0 then
+        local sqrtD = math.sqrt(discriminant)
+        local t1 = (-b + sqrtD) / (2 * a)
+        local t2 = (-b - sqrtD) / (2 * a)
 
-    if closestDistance then
-        if closestDistance <= 8 then
-            currentConfig.value1 = math.min(0.001, currentConfig.value1 - (0.0001 + velocityFactor + pingFactor))
-            currentConfig.value2 = math.min(0.0005, currentConfig.value2 - 0.0003)
-            currentConfig.value3 = math.min(0.0005, currentConfig.value3 - 0.003)
-        elseif closestDistance <= 15 then
-            currentConfig.value1 = math.min(0.15, currentConfig.value1 - (0.0001 + velocityFactor + pingFactor))
-            currentConfig.value2 = math.min(0.002, currentConfig.value2 - 0.00005)
-            currentConfig.value3 = math.min(0.003, currentConfig.value3 - 0.0005)
+        if t1 > 0 and t2 > 0 then
+            timeToImpact = math.min(t1, t2)
+        elseif t1 > 0 then
+            timeToImpact = t1
+        elseif t2 > 0 then
+            timeToImpact = t2
+        else
+            return math.huge
         end
+    else
+        return math.huge
     end
 
-    currentConfig.value1 = math.max(baseValue1, currentConfig.value1)
-    currentConfig.value2 = math.max(0, currentConfig.value2)
-    currentConfig.value3 = math.max(0, currentConfig.value3)
+    local airDensity = 1.225
+    local dragCoefficient = 0.47
+    local crossSectionalArea = math.pi * (ballRadius ^ 2)
+    local dragForce = 0.5 * airDensity * speed^2 * dragCoefficient * crossSectionalArea
+    local dragEffect = dragForce / ball:GetMass()
 
-    peakTracker[ball] = currentSpeed
+    timeToImpact = timeToImpact * (1 + dragEffect)
+
+    return timeToImpact
 end
 
-local function checkProximityToPlayer(ball, player)
-    TrackBallVelocity(ball)
+local function CalculateThreshold(ball: BasePart, player: Player): number
+    local rootPart: BasePart? = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if not rootPart then return math.huge end
 
-    local predictionTime = calculatePredictionTime(ball, player)
+    local ping: number = GetPlayerPing() / 1000
+    UpdateConfigBasedOnPing(ping * 1000)
+
+    local distance: number = (ball.Position - rootPart.Position).Magnitude
+    local velocity: number = GetBallVelocity(ball).Magnitude
+
+    local logDistanceFactor: number = math.log(distance + 1) * currentConfig.value3
+
+    local velocityFactor: number = math.exp(-velocity * currentConfig.value2)
+
+    local mass: number = ball:GetMass()
+    local kineticEnergy: number = 0.5 * mass * (velocity ^ 2)
+    local kineticEnergyFactor: number = kineticEnergy / (mass + 1) * 0.01
+
+    local pingCompensation: number = ping * 1.78
+    local adaptivePingFactor: number = math.max(0.5, 1 - math.exp(-ping * 10))
+
+    local baseThreshold: number = (currentConfig.value1 + pingCompensation) * adaptivePingFactor
+
+    local threshold: number = math.max(baseThreshold, currentConfig.value4 - velocityFactor - logDistanceFactor - kineticEnergyFactor)
+
+    return threshold
+end
+
+local function CheckProximityToPlayer(ball: BasePart, player: Player): nil
+    local predictionTime = CalculatePredictionTime(ball, player)
     local realBallAttribute = ball:GetAttribute("realBall")
     local target = ball:GetAttribute("target")
-    local ballSpeedThreshold = calculateThreshold(ball, player)
 
-    if predictionTime <= ballSpeedThreshold and realBallAttribute and target == player.Name and not isKeyPressed[ball] and (not lastPressTime[ball] or tick() - lastPressTime[ball] > pressCooldown) then
+    local ballSpeedThreshold = CalculateThreshold(ball, player)
+    local shouldPress = predictionTime <= ballSpeedThreshold and realBallAttribute and target == player.Name
+
+    if shouldPress and not isKeyPressed[ball] and (not lastPressTime[ball] or tick() - lastPressTime[ball] > pressCooldown) then
         Vim:SendKeyEvent(true, Enum.KeyCode.F, false, nil)
         Vim:SendKeyEvent(false, Enum.KeyCode.F, false, nil)
 
         lastPressTime[ball] = tick()
         isKeyPressed[ball] = true
-    elseif lastPressTime[ball] and (predictionTime > ballSpeedThreshold or not realBallAttribute or target ~= player.Name) then
+    elseif lastPressTime[ball] and (not shouldPress) then
         isKeyPressed[ball] = false
     end
 end
 
-local function getAllBalls()
+local function GetAllBalls(): {BasePart}
     local allBalls = {}
-    
-    for _, obj in ipairs(Workspace:GetChildren()) do
-        if obj == ballFolder then
-            for _, ball in ipairs(ballFolder:GetChildren()) do
-                table.insert(allBalls, ball)
-            end
-        elseif obj == trainingFolder then
-            for _, trainingBall in ipairs(trainingFolder:GetChildren()) do
-                table.insert(allBalls, trainingBall)
-            end
+
+    for _, obj in ipairs({ ballFolder, trainingFolder }) do
+        for _, ball in ipairs(obj:GetChildren()) do
+            table.insert(allBalls, ball)
         end
     end
-    
     return allBalls
 end
 
-local function checkBallsProximity()
-    local player = Players.LocalPlayer
-    if player and player.Character then
-        for _, ball in ipairs(getAllBalls()) do
-            checkProximityToPlayer(ball, player)
-        end
-    else
+local function CheckBallsProximity(): nil
+    local player: Player? = Players.LocalPlayer
+    local character: Model? = player and player.Character
+
+    if not character then
         isKeyPressed = {}
+        return
+    end
+
+    if player and player.Character then
+        for _, ball in ipairs(GetAllBalls()) do
+            CheckProximityToPlayer(ball, player)
+        end
     end
 end
 
-printValues()
-RunService.Heartbeat:Connect(checkBallsProximity)
+RunService.Heartbeat:Connect(CheckBallsProximity)

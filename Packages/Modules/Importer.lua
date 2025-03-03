@@ -21,7 +21,7 @@ function Importer.Import(scriptPath: string)
             end)
 
             if success then
-                print("[SEO] SUCCESS: Imported from " .. FullURL)
+                --print("[SEO] SUCCESS: Imported from " .. FullURL)
                 return true
             else
                 warn("[SEO] ERROR: Failed to execute script from " .. FullURL)

@@ -78,6 +78,7 @@ GetGameDetails = function(): (string, string)
     end
 
     print("[SEO] Failed to retrieve game name, using PlaceId.")
+    
     return tostring(game.PlaceId), tostring(game.PlaceId)
 end
 
@@ -154,6 +155,7 @@ FetchGameDetails = function(): (string, string)
 
     if not success then
         local shortened = placeName:match("([^_]+_[^_]+)") or placeName
+        
         if shortened ~= placeName then
             print("[SEO] Debug: Trying shortened game name:", "games/" .. shortened .. ".lua")
             success = Importer.Import("games/" .. shortened .. ".lua")
@@ -200,7 +202,7 @@ ExecuteScript = function(scriptPath: string): nil
     end
 end
 
-local function HandleSEO(scriptPath: string)
+HandleSEO = function(scriptPath: string): nil
     if type(scriptPath) ~= "string" or scriptPath == "" then
         warn("[SEO] Invalid script path provided. Execution aborted.")
         return
@@ -209,7 +211,6 @@ local function HandleSEO(scriptPath: string)
     local startTime = tick()
     local executionAttempts = 0
     local maxRetries = 3
-    local success, runError
     local scriptExecuted = false
 
     if getgenv().ExecutedScripts == nil then
@@ -223,29 +224,38 @@ local function HandleSEO(scriptPath: string)
 
     local function ExecuteScript()
         local scriptCode = Importer.Import(scriptPath)
+        
         if not scriptCode or type(scriptCode) ~= "string" or scriptCode == "" then
-            error("[SEO] Importer returned invalid or empty script for: " .. scriptPath)
+            warn("[SEO] Importer returned invalid or empty script: " .. scriptPath)
+            return false, "[SEO] Importer returned empty script"
         end
 
         local func, loadErr = loadstring(scriptCode)
         if not func then
-            error("[SEO] loadstring failed: " .. tostring(loadErr))
+            warn("[SEO] loadstring failed for script: " .. scriptPath .. " | Error: " .. tostring(loadErr))
+            return false, loadErr
         end
 
-        success, runError = pcall(func)
+        local success, runError = pcall(func)
+        if not success then
+            warn("[SEO] Error executing script: " .. scriptPath .. " | Error: " .. tostring(runError))
+            return false, runError
+        end
+
+        return true, nil
     end
 
-    while not success and executionAttempts < maxRetries do
+    while executionAttempts < maxRetries do
         executionAttempts = executionAttempts + 1
         NotifyUser(("[SEO] Attempting to execute script (%d/%d): %s"):format(executionAttempts, maxRetries, scriptPath), "Warning")
 
-        ExecuteScript()
+        local success, errorMsg = ExecuteScript()
 
         if success then
             scriptExecuted = true
             break
         else
-            warn(("[SEO] Execution attempt %d failed for script: %s | Error: %s"):format(executionAttempts, maxRetries, scriptPath, tostring(runError)))
+            warn(("[SEO] Execution attempt %d failed for script: %s | Error: %s"):format(executionAttempts, maxRetries, scriptPath, tostring(errorMsg)))
             task.wait(0.5)
         end
     end
@@ -256,7 +266,7 @@ local function HandleSEO(scriptPath: string)
         getgenv().ExecutedScripts[scriptPath] = true
         print(("[SEO] Script executed successfully: %s | Time: %.2f ms | Attempts: %d"):format(scriptPath, executionTime, executionAttempts))
     else
-        warn(("[SEO] Script execution ultimately failed: %s | Error: %s | Time: %.2f ms"):format(scriptPath, tostring(runError), executionTime))
+        warn(("[SEO] Script execution ultimately failed: %s | Time: %.2f ms"):format(scriptPath, executionTime))
     end
 end
 

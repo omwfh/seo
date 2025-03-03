@@ -201,8 +201,6 @@ ExecuteScript = function(scriptPath: string): nil
 end
 
 local function HandleSEO(scriptPath: string)
-    print("[SEO] Debug: Received scriptPath -", tostring(scriptPath))
-
     if type(scriptPath) ~= "string" or scriptPath == "" then
         warn("[SEO] Invalid script path provided. Execution aborted.")
         return
@@ -225,7 +223,6 @@ local function HandleSEO(scriptPath: string)
 
     local function ExecuteScript()
         local scriptCode = Importer.Import(scriptPath)
-        
         if not scriptCode or type(scriptCode) ~= "string" or scriptCode == "" then
             error("[SEO] Importer returned invalid or empty script for: " .. scriptPath)
         end
@@ -264,18 +261,20 @@ local function HandleSEO(scriptPath: string)
 end
 
 Initiate = function(): nil
+    local scriptPath
+
     if PlaceName and not tonumber(PlaceName) then
-        Code = HttpFetch("games/" .. PlaceName .. ".lua")
+        scriptPath = "games/" .. PlaceName .. ".lua"
     end
 
-    if (not Code or Code == "") and PlaceId and tonumber(PlaceId) then
+    if (not scriptPath or scriptPath == "") and PlaceId and tonumber(PlaceId) then
         NotifyUser("[SEO] Game name not found, trying ID method...", "Warning")
-        Code = HttpFetch("gameid/" .. PlaceId .. ".lua")
+        scriptPath = "gameid/" .. PlaceId .. ".lua"
     end
-    
-    if Code and not Executed then
+
+    if scriptPath and not Executed then
         NotifyUser("[SEO] Loaded!", "Success")
-        HandleSEO(Code)
+        HandleSEO(scriptPath)
         Executed = true
     end
 
@@ -283,12 +282,12 @@ Initiate = function(): nil
         ParallelFetch()
     end
 
-    if (not Code or Code == "") and not Executed then
+    if (not scriptPath or scriptPath == "") and not Executed then
         NotifyUser("[SEO] Game not found, loading universal fallback...", "Error")
-        Code = HttpFetch("universal/main.lua")
+        scriptPath = "universal/main.lua"
 
-        if Code and Code ~= "" then
-            HandleSEO(Code)
+        if scriptPath and scriptPath ~= "" then
+            HandleSEO(scriptPath)
             Executed = true
         else
             warn("[SEO] Failed to load universal script!")

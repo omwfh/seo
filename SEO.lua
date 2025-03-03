@@ -146,6 +146,7 @@ FetchGameDetails = function(): (string, string)
             success = Importer.Import("games/" .. shortened .. ".lua")
             if success then
                 NotifyUser("[SEO] Game Detected: " .. placeName .. " : " .. shortened, "Success")
+                print("[SEO] Game Detected: " .. shortened)
                 placeName = shortened 
             end
         end
@@ -181,11 +182,6 @@ ExecuteScript = function(scriptPath: string): nil
 end
 
 HandleSEO = function(scriptCode: string?): nil
-    if type(scriptCode) ~= "string" or scriptCode == "" then
-        warn("[SEO] Invalid or empty script received. Ensure the script exists and is not returning nil.")
-        return
-    end
-
     local startTime: number = tick()
     local scriptFunction, loadError = loadstring(scriptCode)
 
@@ -228,7 +224,6 @@ Initiate = function(): nil
 
     if (not Code or Code == "") and not Executed then
         NotifyUser("[SEO] Game not found, loading universal fallback...", "Error")
-        
         Code = HttpFetch("universal/main.lua")
 
         if Code and Code ~= "" then

@@ -9,7 +9,7 @@
 
  SEO: Loader
 
- Version: 4.2
+ Version: 4.4
 ]]
 
 if not game:IsLoaded() then game.Loaded:Wait() end

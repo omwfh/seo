@@ -82,11 +82,19 @@ GetGameDetails = function(): (string, string)
 end
 
 HttpFetch = function(scriptPath: string): string?
+    print("[SEO] Debug: Attempting to fetch script -", scriptPath)
+
+    if not scriptPath or scriptPath == "" then
+        warn("[SEO] ERROR: Provided scriptPath is nil or empty.")
+        return nil
+    end
+
     local success, result = pcall(function()
         return Importer.Import(scriptPath)
     end)
 
     if success and result then
+        print("[SEO] Successfully imported script: " .. scriptPath)
         return result
     else
         warn("[SEO] ERROR: Failed to import script '" .. scriptPath .. "'")
@@ -134,20 +142,27 @@ FetchGameDetails = function(): (string, string)
     local success = false
 
     if not success then
+        print("[SEO] Debug: Trying game-specific script:", "games/" .. placeName .. ".lua")
         success = Importer.Import("games/" .. placeName .. ".lua")
+
         if success then
             NotifyUser("[SEO] Game Detected: " .. placeName, "Success")
+        else
+            warn("[SEO] Game script not found:", placeName)
         end
     end
 
     if not success then
         local shortened = placeName:match("([^_]+_[^_]+)") or placeName
         if shortened ~= placeName then
+            print("[SEO] Debug: Trying shortened game name:", "games/" .. shortened .. ".lua")
             success = Importer.Import("games/" .. shortened .. ".lua")
+
             if success then
-                NotifyUser("[SEO] Game Detected: " .. placeName .. " : " .. shortened, "Success")
-                print("[SEO] Game Detected: " .. shortened)
-                placeName = shortened 
+                NotifyUser("[SEO] Game Detected: " .. shortened, "Success")
+                placeName = shortened
+            else
+                warn("[SEO] Shortened script not found:", shortened)
             end
         end
     end
@@ -155,6 +170,10 @@ FetchGameDetails = function(): (string, string)
     if not success then
         NotifyUser("[SEO] Game not found, loading universal fallback...", "Error")
         success = Importer.Import("games/universal.lua")
+
+        if not success then
+            warn("[SEO] ERROR: Universal script failed to load.")
+        end
     end
 
     return placeName, placeId
@@ -182,6 +201,7 @@ ExecuteScript = function(scriptPath: string): nil
 end
 
 HandleSEO = function(scriptPath: string): nil
+    print("[SEO] Debug: Received scriptPath -", tostring(scriptPath))
     if type(scriptPath) ~= "string" or scriptPath == "" then
         warn("[SEO] Invalid script path provided. Execution aborted.")
         return

@@ -9,7 +9,7 @@
 
  SEO: Loader
 
- Version: 3.5.2
+ Version: 3.7
 ]]
 
 if not game:IsLoaded() then game.Loaded:Wait() end
@@ -126,7 +126,7 @@ SetState = function(url: string, state: boolean): nil
     end
 end
 
-FetchGameDetails = function(): string
+FetchGameDetails = function(): (string, string)
     NotifyUser("[SEO] Fetching game details...", "Info")
     task.wait(1.25)
 
@@ -139,6 +139,7 @@ FetchGameDetails = function(): string
         success = Importer.Import("games/" .. shortened .. ".lua")
 
         if success then
+            NotifyUser("[SEO] Game Detected: " .. placeName .. " : " .. shortened, "Success")
             placeName = shortened
         end
     end
@@ -212,7 +213,6 @@ HandleSEO = function(scriptCode: string): nil
     end
 
     local thread: thread = coroutine.create(RunScript)
-    
     coroutine.resume(thread)
 end
 

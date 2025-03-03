@@ -5,6 +5,7 @@ local v1: Player = Players.LocalPlayer
 local v4: number = 0.059
 local v5: Enum.UserInputType = Enum.UserInputType.MouseButton2
 local v7: boolean = false
+
 local ScreenGui: ScreenGui?
 local InputBox: TextBox?
 
@@ -77,9 +78,8 @@ local function Initiate()
     UserInputService.InputEnded:Connect(function(input)
         if input.UserInputType == v5 then
             v7 = false
-            print("Smooth Aim Stopped")
         end
     end)
 end
 
-Initiate(
+Initiate()

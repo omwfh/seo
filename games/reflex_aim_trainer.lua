@@ -2,7 +2,7 @@ local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 
 local v1: Player = Players.LocalPlayer
-local v4: number = 0.053
+local v4: number = 0.059
 local v5: Enum.UserInputType = Enum.UserInputType.MouseButton2
 local v7: boolean = false
 local ScreenGui: ScreenGui?

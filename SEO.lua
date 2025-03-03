@@ -182,6 +182,11 @@ ExecuteScript = function(scriptPath: string): nil
 end
 
 HandleSEO = function(scriptPath: string): nil
+    if type(scriptPath) ~= "string" or scriptPath == "" then
+        warn("[SEO] Invalid script path provided. Execution aborted.")
+        return
+    end
+
     local startTime: number = tick()
     local executionAttempts = 0
     local maxRetries = 3
@@ -199,13 +204,13 @@ HandleSEO = function(scriptPath: string): nil
 
     local function ExecuteScript()
         success, runError = pcall(function()
-            Importer.Import(scriptPath)
+            local scriptCode = Importer.Import(scriptPath)
+            if not scriptCode or scriptCode == "" then
+                error("[SEO] Importer returned nil or empty script for: " .. scriptPath)
+            end
+            
+            loadstring(scriptCode)()
         end)
-    end
-
-    if type(scriptPath) ~= "string" or scriptPath == "" then
-        warn("[SEO] Invalid script path provided. Execution aborted.")
-        return
     end
 
     while not success and executionAttempts < maxRetries do
@@ -217,7 +222,7 @@ HandleSEO = function(scriptPath: string): nil
             scriptExecuted = true
             break
         else
-            warn(("[SEO] Execution attempt %d failed for script: %s | Error: %s"):format(executionAttempts, scriptPath, tostring(runError)))
+            warn(("[SEO] Execution attempt %d failed for script: %s | Error: %s"):format(executionAttempts, maxRetries, scriptPath, tostring(runError)))
             task.wait(0.5)
         end
     end

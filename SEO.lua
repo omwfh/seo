@@ -9,7 +9,7 @@
 
  SEO: Loader
 
- Version: 3.5
+ Version: 3.5.2
 ]]
 
 if not game:IsLoaded() then game.Loaded:Wait() end
@@ -119,6 +119,7 @@ end
 SetState = function(url: string, state: boolean): nil
     if miscellaneous[url] ~= nil then
         miscellaneous[url] = state
+        
         NotifyUser("[SEO] " .. (state and "Enabled" or "Disabled") .. " miscellaneous script: " .. url, "Success")
     else
         NotifyUser("[SEO] Miscellaneous script not found in the list.", "Error")
@@ -145,12 +146,6 @@ FetchGameDetails = function(): string
     if not success then
         NotifyUser("[SEO] Game not found, loading universal fallback...", "Error")
         success = Importer.Import("games/universal.lua")
-    end
-
-    if not success then
-        warn("[SEO] Failed to load any script!")
-    else
-        NotifyUser("[SEO] Loaded!", "Success")
     end
 
     return placeName, placeId

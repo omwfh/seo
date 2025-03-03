@@ -81,16 +81,16 @@ GetGameDetails = function(): (string, string)
     return tostring(game.PlaceId), tostring(game.PlaceId)
 end
 
-HttpFetch = function(scriptPath: string): boolean
+HttpFetch = function(scriptPath: string): string?
     local success, result = pcall(function()
         return Importer.Import(scriptPath)
     end)
 
     if success and result then
-        return true
+        return result
     else
         warn("[SEO] ERROR: Failed to import script '" .. scriptPath .. "'")
-        return false
+        return nil
     end
 end
 
@@ -138,7 +138,7 @@ FetchGameDetails = function(): string
         success = Importer.Import("games/" .. shortened .. ".lua")
 
         if success then
-            placeName = shortName
+            placeName = shortened
         end
     end
 
@@ -164,12 +164,12 @@ local PlaceName, PlaceId = FetchGameDetails()
 ExecuteScript = function(scriptPath: string): nil
     local startTime = tick()
 
-    local success, scriptCode = pcall(function()
-        return Importer.Import(scriptPath)
+    local success = pcall(function()
+        Importer.Import(scriptPath)
     end)
 
-    if not success or not scriptCode then
-        warn(("[SEO] Failed to fetch script: %s"):format(scriptPath))
+    if not success then
+        warn(("[SEO] Failed to execute script: %s"):format(scriptPath))
         return
     end
 
@@ -231,7 +231,7 @@ Initiate = function(): nil
         Code = HttpFetch("gameid/" .. PlaceId .. ".lua")
     end
     
-    if Code and type(Code) == "string" and Code ~= "" and not Executed then
+    if Code and not Executed then
         NotifyUser("[SEO] Loaded!", "Success")
         HandleSEO(Code)
         Executed = true

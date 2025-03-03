@@ -104,24 +104,24 @@ HttpFetch = function(scriptPath: string): string?
 end
 
 ParallelFetch = function(): nil
-    if not miscellaneous or type(miscellaneous) ~= "table" then
-        warn("[SEO] miscellaneous table is missing or invalid.")
+    if not miscellaneous or not next(miscellaneous) then
+        warn("[SEO] No miscellaneous scripts to load.")
         return
     end
 
     local scriptCount = 0
-    
+
     for scriptPath, enabled in pairs(miscellaneous) do
         if enabled then
+            task.spawn(ExecuteScript, scriptPath)
             scriptCount = scriptCount + 1
-            ExecuteScript(scriptPath)
         end
     end
 
     if scriptCount > 0 then
-        print(("[SEO] Loaded %d miscellaneous scripts."):format(scriptCount))
+        NotifyUser(("[SEO] Loaded %d miscellaneous scripts."):format(scriptCount), "Success")
     else
-        print("[SEO] No miscellaneous scripts are enabled.")
+        NotifyUser("[SEO] No miscellaneous scripts enabled.", "Warning")
     end
 end
 
@@ -187,18 +187,47 @@ local Connection: RBXScriptConnection?
 local PlaceName, PlaceId = FetchGameDetails()
 
 ExecuteScript = function(scriptPath: string): nil
-    local startTime = tick()
+    if type(scriptPath) ~= "string" or scriptPath == "" then
+        warn("[SEO] Invalid script path provided.")
+        return
+    end
 
-    local success = pcall(function()
-        Importer.Import(scriptPath)
-    end)
+    local executionAttempts, maxRetries = 0, 3
+    local scriptExecuted = false
 
-    local executionTime = (tick() - startTime) * 1000
+    while executionAttempts < maxRetries and not scriptExecuted do
+        executionAttempts = executionAttempts + 1
+        local startTime = tick()
 
-    if success then
-        print(("[SEO] Successfully executed script: %s | Time: %.2f ms"):format(scriptPath, executionTime))
-    else
-        warn(("[SEO] Failed to execute script: %s | Time: %.2f ms"):format(scriptPath, executionTime))
+        local success, scriptCode = pcall(Importer.Import, scriptPath)
+
+        if not success or not scriptCode or scriptCode == "" then
+            warn(("[SEO] Failed to import script: %s (Attempt %d/%d)"):format(scriptPath, executionAttempts, maxRetries))
+            task.wait(0.5)
+            continue
+        end
+
+        local func, loadErr = loadstring(scriptCode)
+        if not func then
+            warn(("[SEO] Load error for script: %s | Error: %s (Attempt %d/%d)"):format(scriptPath, tostring(loadErr), executionAttempts, maxRetries))
+            task.wait(0.5)
+            continue
+        end
+
+        local runSuccess, runError = pcall(func)
+        local executionTime = (tick() - startTime) * 1000
+
+        if runSuccess then
+            scriptExecuted = true
+            NotifyUser(("[SEO] Successfully executed script: %s | Time: %.2f ms"):format(scriptPath, executionTime), "Success")
+        else
+            warn(("[SEO] Execution failed: %s | Error: %s (Attempt %d/%d)"):format(scriptPath, tostring(runError), executionAttempts, maxRetries))
+            task.wait(0.5)
+        end
+    end
+
+    if not scriptExecuted then
+        NotifyUser(("[SEO] Script failed after %d attempts: %s"):format(maxRetries, scriptPath), "Error")
     end
 end
 
@@ -207,11 +236,6 @@ HandleSEO = function(scriptPath: string): nil
         warn("[SEO] Invalid script path provided. Execution aborted.")
         return
     end
-
-    local startTime = tick()
-    local executionAttempts = 0
-    local maxRetries = 3
-    local scriptExecuted = false
 
     if getgenv().ExecutedScripts == nil then
         getgenv().ExecutedScripts = {}
@@ -222,62 +246,56 @@ HandleSEO = function(scriptPath: string): nil
         return
     end
 
-    local function ExecuteScript()
+    local executionAttempts, maxRetries = 0, 3
+    local scriptExecuted = false
+
+    local function TryExecuteScript()
         local scriptCode = Importer.Import(scriptPath)
         
-        if not scriptCode or type(scriptCode) ~= "string" or scriptCode == "" then
-            warn("[SEO] Importer returned invalid or empty script: " .. scriptPath)
-            return false, "[SEO] Importer returned empty script"
+        if not scriptCode or scriptCode == "" then
+            return false, "[SEO] Importer returned empty or nil script: " .. scriptPath
         end
 
         local func, loadErr = loadstring(scriptCode)
         if not func then
-            warn("[SEO] loadstring failed for script: " .. scriptPath .. " | Error: " .. tostring(loadErr))
-            return false, loadErr
+            return false, "[SEO] loadstring failed: " .. tostring(loadErr)
         end
 
         local success, runError = pcall(func)
         if not success then
-            warn("[SEO] Error executing script: " .. scriptPath .. " | Error: " .. tostring(runError))
-            return false, runError
+            return false, "[SEO] Execution error: " .. tostring(runError)
         end
 
         return true, nil
     end
 
-    while executionAttempts < maxRetries do
+    while executionAttempts < maxRetries and not scriptExecuted do
         executionAttempts = executionAttempts + 1
-        NotifyUser(("[SEO] Attempting to execute script (%d/%d): %s"):format(executionAttempts, maxRetries, scriptPath), "Warning")
+        NotifyUser(("[SEO] Attempting execution (%d/%d): %s"):format(executionAttempts, maxRetries, scriptPath), "Warning")
 
-        local success, errorMsg = ExecuteScript()
-
+        local success, errorMsg = TryExecuteScript()
         if success then
             scriptExecuted = true
-            break
         else
-            warn(("[SEO] Execution attempt %d failed for script: %s | Error: %s"):format(executionAttempts, maxRetries, scriptPath, tostring(errorMsg)))
+            warn(errorMsg)
             task.wait(0.5)
         end
     end
 
-    local executionTime = (tick() - startTime) * 1000
-    
     if scriptExecuted then
         getgenv().ExecutedScripts[scriptPath] = true
-        print(("[SEO] Script executed successfully: %s | Time: %.2f ms | Attempts: %d"):format(scriptPath, executionTime, executionAttempts))
+        NotifyUser(("[SEO] Successfully executed: %s | Attempts: %d"):format(scriptPath, executionAttempts), "Success")
     else
-        warn(("[SEO] Script execution ultimately failed: %s | Time: %.2f ms"):format(scriptPath, executionTime))
+        NotifyUser(("[SEO] Failed after %d attempts: %s"):format(maxRetries, scriptPath), "Error")
     end
 end
 
-Initiate = function(): nil
+Initiate = function()
     local scriptPath
 
     if PlaceName and not tonumber(PlaceName) then
         scriptPath = "games/" .. PlaceName .. ".lua"
-    end
-
-    if (not scriptPath or scriptPath == "") and PlaceId and tonumber(PlaceId) then
+    elseif PlaceId and tonumber(PlaceId) then
         NotifyUser("[SEO] Game name not found, trying ID method...", "Warning")
         scriptPath = "gameid/" .. PlaceId .. ".lua"
     end
@@ -288,22 +306,24 @@ Initiate = function(): nil
         Executed = true
     end
 
-    if miscellaneous and type(miscellaneous) == "table" then
+    if miscellaneous and next(miscellaneous) then
         ParallelFetch()
     end
 
-    if (not scriptPath or scriptPath == "") and not Executed then
+    if not Executed then
         NotifyUser("[SEO] Game not found, loading universal fallback...", "Error")
         scriptPath = "universal/main.lua"
 
-        if scriptPath and scriptPath ~= "" then
+        if scriptPath then
             HandleSEO(scriptPath)
             Executed = true
         else
             warn("[SEO] Failed to load universal script!")
         end
+    end
 
-        if Connection then Connection:Disconnect() end
+    if Connection then
+        Connection:Disconnect()
     end
 end
 

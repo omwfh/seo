@@ -200,14 +200,15 @@ ExecuteScript = function(scriptPath: string): nil
     end
 end
 
-HandleSEO = function(scriptPath: string): nil
+local function HandleSEO(scriptPath: string)
     print("[SEO] Debug: Received scriptPath -", tostring(scriptPath))
+
     if type(scriptPath) ~= "string" or scriptPath == "" then
         warn("[SEO] Invalid script path provided. Execution aborted.")
         return
     end
 
-    local startTime: number = tick()
+    local startTime = tick()
     local executionAttempts = 0
     local maxRetries = 3
     local success, runError
@@ -223,19 +224,24 @@ HandleSEO = function(scriptPath: string): nil
     end
 
     local function ExecuteScript()
-        success, runError = pcall(function()
-            local scriptCode = Importer.Import(scriptPath)
-            if not scriptCode or scriptCode == "" then
-                error("[SEO] Importer returned nil or empty script for: " .. scriptPath)
-            end
-            
-            loadstring(scriptCode)()
-        end)
+        local scriptCode = Importer.Import(scriptPath)
+        
+        if not scriptCode or type(scriptCode) ~= "string" or scriptCode == "" then
+            error("[SEO] Importer returned invalid or empty script for: " .. scriptPath)
+        end
+
+        local func, loadErr = loadstring(scriptCode)
+        if not func then
+            error("[SEO] loadstring failed: " .. tostring(loadErr))
+        end
+
+        success, runError = pcall(func)
     end
 
     while not success and executionAttempts < maxRetries do
         executionAttempts = executionAttempts + 1
         NotifyUser(("[SEO] Attempting to execute script (%d/%d): %s"):format(executionAttempts, maxRetries, scriptPath), "Warning")
+
         ExecuteScript()
 
         if success then

@@ -9,7 +9,7 @@
 
  SEO: Loader
 
- Version: 3.7
+ Version: 4.0
 ]]
 
 if not game:IsLoaded() then game.Loaded:Wait() end
@@ -105,7 +105,7 @@ ParallelFetch = function(): nil
     for scriptPath, enabled in pairs(miscellaneous) do
         if enabled then
             scriptCount = scriptCount + 1
-            task.spawn(ExecuteScript, scriptPath)
+            ExecuteScript(scriptPath)
         end
     end
 
@@ -131,7 +131,6 @@ FetchGameDetails = function(): (string, string)
     task.wait(1.25)
 
     local placeName, placeId = GetGameDetails()
-    
     local success = Importer.Import("games/" .. placeName .. ".lua")
 
     if not success then
@@ -164,25 +163,12 @@ ExecuteScript = function(scriptPath: string): nil
         Importer.Import(scriptPath)
     end)
 
-    if not success then
-        warn(("[SEO] Failed to execute script: %s"):format(scriptPath))
-        return
-    end
-
-    local scriptFunction, loadError = loadstring(scriptCode)
-
-    if not scriptFunction then
-        warn(("[SEO] Compilation failed for script: %s | Error: %s"):format(scriptPath, loadError))
-        return
-    end
-
-    local runSuccess, runError = pcall(scriptFunction)
     local executionTime = (tick() - startTime) * 1000
 
-    if runSuccess then
+    if success then
         print(("[SEO] Successfully executed script: %s | Time: %.2f ms"):format(scriptPath, executionTime))
     else
-        warn(("[SEO] Execution failed for script: %s | Error: %s | Time: %.2f ms"):format(scriptPath, runError, executionTime))
+        warn(("[SEO] Failed to execute script: %s | Time: %.2f ms"):format(scriptPath, executionTime))
     end
 end
 
@@ -193,7 +179,6 @@ HandleSEO = function(scriptCode: string): nil
     end
 
     local startTime: number = tick()
-    
     local scriptFunction, loadError = scriptCode and loadstring(scriptCode) or nil
     
     if not scriptFunction then

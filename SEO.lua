@@ -181,24 +181,54 @@ ExecuteScript = function(scriptPath: string): nil
     end
 end
 
-HandleSEO = function(scriptCode: string?): nil
+HandleSEO = function(scriptPath: string): nil
     local startTime: number = tick()
-    local scriptFunction, loadError = loadstring(scriptCode)
+    local executionAttempts = 0
+    local maxRetries = 3
+    local success, runError
+    local scriptExecuted = false
 
-    if not scriptFunction then
-        warn("[SEO] Failed to compile script: " .. tostring(loadError))
+    if getgenv().ExecutedScripts == nil then
+        getgenv().ExecutedScripts = {}
+    end
+
+    if getgenv().ExecutedScripts[scriptPath] then
+        warn("[SEO] Script already executed: " .. scriptPath)
         return
     end
 
-    local success, runError = pcall(function()
-        local executionStart = tick()
-        scriptFunction()
-        local executionTime = (tick() - executionStart) * 1000
-        print(('[SEO] Script executed successfully in %.2f ms.'):format(executionTime))
-    end)
+    local function ExecuteScript()
+        success, runError = pcall(function()
+            Importer.Import(scriptPath)
+        end)
+    end
 
-    if not success then
-        warn(("[SEO] Script execution failed: %s"):format(tostring(runError)))
+    if type(scriptPath) ~= "string" or scriptPath == "" then
+        warn("[SEO] Invalid script path provided. Execution aborted.")
+        return
+    end
+
+    while not success and executionAttempts < maxRetries do
+        executionAttempts = executionAttempts + 1
+        NotifyUser(("[SEO] Attempting to execute script (%d/%d): %s"):format(executionAttempts, maxRetries, scriptPath), "Warning")
+        ExecuteScript()
+
+        if success then
+            scriptExecuted = true
+            break
+        else
+            warn(("[SEO] Execution attempt %d failed for script: %s | Error: %s"):format(executionAttempts, scriptPath, tostring(runError)))
+            task.wait(0.5)
+        end
+    end
+
+    local executionTime = (tick() - startTime) * 1000
+    
+    if scriptExecuted then
+        getgenv().ExecutedScripts[scriptPath] = true
+        print(("[SEO] Script executed successfully: %s | Time: %.2f ms | Attempts: %d"):format(scriptPath, executionTime, executionAttempts))
+    else
+        warn(("[SEO] Script execution ultimately failed: %s | Error: %s | Time: %.2f ms"):format(scriptPath, tostring(runError), executionTime))
     end
 end
 

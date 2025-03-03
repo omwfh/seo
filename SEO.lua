@@ -9,7 +9,7 @@
 
  SEO: Loader
 
- Version: 4.0
+ Version: 4.2
 ]]
 
 if not game:IsLoaded() then game.Loaded:Wait() end
@@ -131,15 +131,23 @@ FetchGameDetails = function(): (string, string)
     task.wait(1.25)
 
     local placeName, placeId = GetGameDetails()
-    local success = Importer.Import("games/" .. placeName .. ".lua")
+    local success = false
+
+    if not success then
+        success = Importer.Import("games/" .. placeName .. ".lua")
+        if success then
+            NotifyUser("[SEO] Game Detected: " .. placeName, "Success")
+        end
+    end
 
     if not success then
         local shortened = placeName:match("([^_]+_[^_]+)") or placeName
-        success = Importer.Import("games/" .. shortened .. ".lua")
-
-        if success then
-            NotifyUser("[SEO] Game Detected: " .. placeName .. " : " .. shortened, "Success")
-            placeName = shortened
+        if shortened ~= placeName then
+            success = Importer.Import("games/" .. shortened .. ".lua")
+            if success then
+                NotifyUser("[SEO] Game Detected: " .. placeName .. " : " .. shortened, "Success")
+                placeName = shortened 
+            end
         end
     end
 
@@ -172,33 +180,30 @@ ExecuteScript = function(scriptPath: string): nil
     end
 end
 
-HandleSEO = function(scriptCode: string): nil
+HandleSEO = function(scriptCode: string?): nil
     if type(scriptCode) ~= "string" or scriptCode == "" then
-        warn("[SEO] Invalid or empty script received.")
+        warn("[SEO] Invalid or empty script received. Ensure the script exists and is not returning nil.")
         return
     end
 
     local startTime: number = tick()
-    local scriptFunction, loadError = scriptCode and loadstring(scriptCode) or nil
-    
+    local scriptFunction, loadError = loadstring(scriptCode)
+
     if not scriptFunction then
-        warn("[SEO] Failed to compile script:", loadError)
+        warn("[SEO] Failed to compile script: " .. tostring(loadError))
         return
     end
 
-    RunScript = function(): nil
-        local success, runError = pcall(scriptFunction)
-        local executionTime: number = (tick() - startTime) * 1000
-        
-        if success then
-            print(('[SEO] Script executed successfully in %.2f ms.'):format(executionTime))
-        else
-            warn(('[SEO] Script execution failed after %.2f ms: %s'):format(executionTime, runError))
-        end
-    end
+    local success, runError = pcall(function()
+        local executionStart = tick()
+        scriptFunction()
+        local executionTime = (tick() - executionStart) * 1000
+        print(('[SEO] Script executed successfully in %.2f ms.'):format(executionTime))
+    end)
 
-    local thread: thread = coroutine.create(RunScript)
-    coroutine.resume(thread)
+    if not success then
+        warn(("[SEO] Script execution failed: %s"):format(tostring(runError)))
+    end
 end
 
 Initiate = function(): nil

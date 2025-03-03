@@ -1,7 +1,9 @@
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local Camera = workspace.CurrentCamera
 
-local v1: Player = Players.LocalPlayer
+local LocalPlayer: Player = Players.LocalPlayer
 local v4: number = 0.059
 local v5: Enum.UserInputType = Enum.UserInputType.MouseButton2
 local v7: boolean = false
@@ -23,24 +25,63 @@ local function protectScreenGui(screenGui: ScreenGui)
     end)
 end
 
+local function getClosestTarget()
+    local closestPlayer = nil
+    local shortestDistance = math.huge
+
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local rootPart = player.Character.HumanoidRootPart
+            local screenPosition, onScreen = Camera:WorldToViewportPoint(rootPart.Position)
+
+            if onScreen then
+                local mousePosition = UserInputService:GetMouseLocation()
+                local distance = (Vector2.new(screenPosition.X, screenPosition.Y) - mousePosition).Magnitude
+
+                if distance < shortestDistance then
+                    closestPlayer = rootPart
+                    shortestDistance = distance
+                end
+            end
+        end
+    end
+
+    return closestPlayer
+end
+
+local function updateAiming()
+    RunService.RenderStepped:Connect(function()
+        if v7 then
+            local target = getClosestTarget()
+            if target then
+                local targetPosition = target.Position
+                local cameraPosition = Camera.CFrame.Position
+                local direction = (targetPosition - cameraPosition).unit
+                local newCFrame = Camera.CFrame:Lerp(CFrame.lookAt(cameraPosition, cameraPosition + direction), v4)
+                Camera.CFrame = newCFrame
+            end
+        end
+    end)
+end
+
 local function Initiate()
     if ScreenGui then
         ScreenGui:Destroy()
         ScreenGui = nil
     end
 
-    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "SmoothingInput"
     protectScreenGui(ScreenGui)
 
-    local InputFrame: Frame = Instance.new("Frame")
+    local InputFrame = Instance.new("Frame")
     InputFrame.Name = "ClientInfo"
     InputFrame.Parent = ScreenGui
     InputFrame.Position = UDim2.new(0.005, 0, 1, -64)
     InputFrame.Size = UDim2.new(0, 119, 0, 30)
     InputFrame.BackgroundTransparency = 1
 
-    local InputBox = Instance.new("TextBox")
+    InputBox = Instance.new("TextBox")
     InputBox.Parent = InputFrame
     InputBox.Name = "ValueInput"
     InputBox.Position = UDim2.new(0, 0, 0.572, 0)
@@ -59,9 +100,10 @@ local function Initiate()
     InputBox.FocusLost:Connect(function(enterPressed)
         if enterPressed then
             local newValue = tonumber(InputBox.Text)
+            
             if newValue then
                 v4 = math.clamp(newValue, 0.01, 0.2)
-                print("v4 value updated to:", v4)
+                print("Smoothness updated to:", v4)
             else
                 InputBox.Text = tostring(v4)
             end
@@ -70,6 +112,7 @@ local function Initiate()
 
     UserInputService.InputBegan:Connect(function(input, gameProcessed)
         if gameProcessed then return end
+        
         if input.UserInputType == v5 and not v7 then
             v7 = true
         end
@@ -80,6 +123,8 @@ local function Initiate()
             v7 = false
         end
     end)
+
+    updateAiming()
 end
 
 Initiate()

@@ -56,8 +56,8 @@ local function updateAiming()
             if target then
                 local targetPosition = target.Position
                 local cameraPosition = Camera.CFrame.Position
-                local direction = (targetPosition - cameraPosition).unit
-                local newCFrame = Camera.CFrame:Lerp(CFrame.lookAt(cameraPosition, cameraPosition + direction), v4)
+                
+                local newCFrame = Camera.CFrame:Lerp(CFrame.lookAt(cameraPosition, targetPosition), v4)
                 Camera.CFrame = newCFrame
             end
         end

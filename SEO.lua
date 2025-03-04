@@ -240,7 +240,15 @@ HandleSEO = function(scriptPath: string): nil
     local maxRetries = 3
     local executionAttempts = 0
 
-    local function ExecutionAttempt()
+    local function ExecutionAttempt(scriptPath: string): (boolean, string?)
+        if not scriptPath or scriptPath == "" then
+            return false, "[SEO] Invalid script path provided."
+        end
+    
+        if getgenv().ExecutedScripts and getgenv().ExecutedScripts[scriptPath] then
+            return false, "[SEO] Script already executed: " .. scriptPath
+        end
+    
         local scriptCode = Importer.Import(scriptPath)
         
         if not scriptCode or scriptCode == "" then
@@ -250,26 +258,28 @@ HandleSEO = function(scriptPath: string): nil
         local func, loadErr = loadstring(scriptCode)
         
         if not func then
-            return false, "[SEO] loadstring failed: " .. tostring(loadErr)
+            return false, "[SEO] loadstring failed for script: " .. scriptPath .. " | Error: " .. tostring(loadErr)
         end
-
+    
         local success, runError = pcall(func)
         
-        if not success then
-            return false, "[SEO] Execution error: " .. tostring(runError)
+        if success then
+            getgenv().ExecutedScripts = getgenv().ExecutedScripts or {}
+            getgenv().ExecutedScripts[scriptPath] = true
+            
+            return true, nil
+        else
+            return false, "[SEO] Execution error for script: " .. scriptPath .. " | Error: " .. tostring(runError)
         end
-
-        return true, nil
     end
-
+    
     while executionAttempts < maxRetries do
         executionAttempts = executionAttempts + 1
         
-        local success, errorMsg = ExecutionAttempt()
+        local success, errorMsg = ExecutionAttempt(scriptPath)
         
         if success then
-            getgenv().ExecutedScripts[scriptPath] = true
-            return
+            break
         else
             warn(errorMsg)
             

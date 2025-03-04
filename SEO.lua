@@ -265,13 +265,10 @@ HandleSEO = function(scriptPath: string): nil
     while executionAttempts < maxRetries do
         executionAttempts = executionAttempts + 1
         
-        NotifyUser(('[SEO] Attempting execution (%d/%d): %s'):format(executionAttempts, maxRetries, scriptPath), "Warning")
-        
         local success, errorMsg = ExecutionAttempt()
         
         if success then
             getgenv().ExecutedScripts[scriptPath] = true
-            NotifyUser(('[SEO] Successfully executed: %s | Attempts: %d'):format(scriptPath, executionAttempts), "Success")
             return
         else
             warn(errorMsg)
@@ -281,8 +278,6 @@ HandleSEO = function(scriptPath: string): nil
             end
         end
     end
-
-    NotifyUser(('[SEO] Failed after %d attempts: %s'):format(maxRetries, scriptPath), "Error")
 end
 
 Initiate = function()

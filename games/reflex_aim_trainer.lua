@@ -1,4 +1,3 @@
---// Services
 local Players: Players = game:GetService("Players")
 local UserInputService: UserInputService = game:GetService("UserInputService")
 local RunService: RunService = game:GetService("RunService")
@@ -42,6 +41,7 @@ local function getClosestTarget(): BasePart?
     for _, target: Instance in ipairs(TargetsFolder:GetChildren()) do
         if target:IsA("BasePart") or target:IsA("Part") then
             local screenPosition: Vector3, onScreen: boolean = Camera:WorldToViewportPoint(target.Position)
+            
             if onScreen then
                 local distance: number = (Vector2.new(screenPosition.X, screenPosition.Y) - mousePosition).Magnitude
                 local sizeFactor: number = math.clamp(target.Size.Magnitude / 5, 0.5, v9)

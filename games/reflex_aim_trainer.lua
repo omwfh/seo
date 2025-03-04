@@ -1,130 +1,140 @@
-local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
-local Camera = workspace.CurrentCamera
+--// Services
+local Players: Players = game:GetService("Players")
+local UserInputService: UserInputService = game:GetService("UserInputService")
+local RunService: RunService = game:GetService("RunService")
+local TweenService: TweenService = game:GetService("TweenService")
+local Camera: Camera = workspace.CurrentCamera
+local TargetsFolder: Folder? = workspace:FindFirstChild("Targets")
 
 local LocalPlayer: Player = Players.LocalPlayer
-local v4: number = 0.059
-local v5: Enum.UserInputType = Enum.UserInputType.MouseButton2
-local v7: boolean = false
 
-local ScreenGui: ScreenGui?
-local InputBox: TextBox?
+local v1: number = 0.15 -- smoothing
+local v2: Enum.UserInputType = Enum.UserInputType.MouseButton2 -- key
+local v3: boolean = false -- aiming
+local v4: number = 125 -- fov
+local v5: number = 4 -- camera shake intensity
+local v6: number = 0.15 -- camera shake frequency
+local v7: number = 0.25 -- offset
+local v8: number = 0.1 -- velocity prediction
+local v9: number = 2 -- fov scaling
 
-local function protectScreenGui(screenGui: ScreenGui)
-    assert(screenGui and screenGui:IsA("ScreenGui"), "[SEO] Invalid argument: screenGui must be a valid ScreenGui instance.")
-    task.defer(function()
-        if syn and syn.protect_gui then
-            syn.protect_gui(screenGui)
-            screenGui.Parent = game:GetService("CoreGui")
-        elseif gethui then
-            screenGui.Parent = gethui()
-        else
-            screenGui.Parent = game:GetService("CoreGui")
-        end
-    end)
+local function getDynamicOffset(target: BasePart): Vector3
+    local sizeFactor: number = math.clamp(target.Size.Magnitude / 10, 0.1, 2)
+    return Vector3.new(
+        (math.random() - 0.5) * v7 * sizeFactor,
+        (math.random() - 0.5) * v7 * sizeFactor,
+        (math.random() - 0.5) * v7 * sizeFactor
+    )
 end
 
-local function getClosestTarget()
-    local closestPlayer = nil
-    local shortestDistance = math.huge
+local function getPredictedPosition(target: BasePart): Vector3
+    local velocity: Vector3 = target.AssemblyLinearVelocity or Vector3.zero
+    return target.Position + (velocity * v8)
+end
 
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            local rootPart = player.Character.HumanoidRootPart
-            local screenPosition, onScreen = Camera:WorldToViewportPoint(rootPart.Position)
+local function getClosestTarget(): BasePart?
+    if not TargetsFolder then return nil end
+    
+    local closestTarget: BasePart? = nil
+    local shortestDistance: number = math.huge
+    local mousePosition: Vector2 = UserInputService:GetMouseLocation()
 
+    for _, target: Instance in ipairs(TargetsFolder:GetChildren()) do
+        if target:IsA("BasePart") or target:IsA("Part") then
+            local screenPosition: Vector3, onScreen: boolean = Camera:WorldToViewportPoint(target.Position)
             if onScreen then
-                local mousePosition = UserInputService:GetMouseLocation()
-                local distance = (Vector2.new(screenPosition.X, screenPosition.Y) - mousePosition).Magnitude
+                local distance: number = (Vector2.new(screenPosition.X, screenPosition.Y) - mousePosition).Magnitude
+                local sizeFactor: number = math.clamp(target.Size.Magnitude / 5, 0.5, v9)
 
-                if distance < shortestDistance then
-                    closestPlayer = rootPart
+                if distance < shortestDistance and distance < (v4 * sizeFactor) then
+                    closestTarget = target
                     shortestDistance = distance
                 end
             end
         end
     end
 
-    return closestPlayer
+    return closestTarget
+end
+
+local function applyCameraShake()
+    local baseCFrame: CFrame = Camera.CFrame
+    for _ = 1, 5 do
+        task.wait(v6)
+        local shakeOffset: Vector3 = Vector3.new(
+            (math.random() - 0.5) * v5,
+            (math.random() - 0.5) * v5,
+            0
+        )
+        Camera.CFrame = baseCFrame * CFrame.new(shakeOffset)
+    end
+end
+
+local function smoothAim(target: BasePart)
+    if not target then return end
+
+    local predictedPosition: Vector3 = getPredictedPosition(target)
+    local targetPosition: Vector3 = predictedPosition + getDynamicOffset(target)
+    local cameraPosition: Vector3 = Camera.CFrame.Position
+
+    local newCFrame: CFrame = CFrame.lookAt(cameraPosition, targetPosition)
+    local tweenInfo: TweenInfo = TweenInfo.new(v1, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
+    local tween = TweenService:Create(Camera, tweenInfo, { CFrame = newCFrame })
+
+    tween:Play()
+    applyCameraShake()
 end
 
 local function updateAiming()
-    RunService.RenderStepped:Connect(function()
-        if v7 then
-            local target = getClosestTarget()
-            if target then
-                local targetPosition = target.Position
-                local cameraPosition = Camera.CFrame.Position
-                
-                local newCFrame = Camera.CFrame:Lerp(CFrame.lookAt(cameraPosition, targetPosition), v4)
-                Camera.CFrame = newCFrame
-            end
+    local connection
+    connection = RunService.RenderStepped:Connect(function()
+        if not v3 then
+            connection:Disconnect()
+            return
+        end
+
+        local target: BasePart? = getClosestTarget()
+        if target then
+            smoothAim(target)
+        end
+    end)
+end
+
+local function handleAimingInput()
+    UserInputService.InputBegan:Connect(function(input: InputObject, gameProcessed: boolean)
+        if gameProcessed then return end
+        if input.UserInputType == v2 and not v3 then
+            v3 = true
+            updateAiming()
+        end
+    end)
+
+    UserInputService.InputEnded:Connect(function(input: InputObject)
+        if input.UserInputType == v2 then
+            v3 = false
         end
     end)
 end
 
 local function Initiate()
-    if ScreenGui then
-        ScreenGui:Destroy()
-        ScreenGui = nil
+    local success, err = pcall(function()
+        if not Players or not UserInputService or not RunService or not TweenService or not Camera then
+            error("[ERROR] One or more required services are missing.")
+        end
+        if not LocalPlayer then
+            error("[ERROR] LocalPlayer is missing.")
+        end
+        if not workspace:FindFirstChild("Targets") then
+            error("[ERROR] 'Targets' folder is missing in workspace.")
+        end
+    end)
+
+    if not success then
+        warn("[AIMBOT ERROR]:", err)
+        return
     end
 
-    ScreenGui = Instance.new("ScreenGui")
-    ScreenGui.Name = "SmoothingInput"
-    protectScreenGui(ScreenGui)
-
-    local InputFrame = Instance.new("Frame")
-    InputFrame.Name = "ClientInfo"
-    InputFrame.Parent = ScreenGui
-    InputFrame.Position = UDim2.new(0.005, 0, 1, -64)
-    InputFrame.Size = UDim2.new(0, 119, 0, 30)
-    InputFrame.BackgroundTransparency = 1
-
-    InputBox = Instance.new("TextBox")
-    InputBox.Parent = InputFrame
-    InputBox.Name = "ValueInput"
-    InputBox.Position = UDim2.new(0, 0, 0.572, 0)
-    InputBox.Size = UDim2.new(0, 119, 0, 20)
-    InputBox.FontFace = Font.new("rbxasset://fonts/families/SourceSansPro.json", Enum.FontWeight.Bold)
-    InputBox.TextSize = 14
-    InputBox.TextTransparency = 0.2
-    InputBox.TextColor3 = Color3.new(1, 1, 1)
-    InputBox.BackgroundTransparency = 0.4
-    InputBox.BackgroundColor3 = Color3.new(0, 0, 0)
-    InputBox.TextXAlignment = Enum.TextXAlignment.Center
-    InputBox.TextYAlignment = Enum.TextYAlignment.Center
-    InputBox.Text = tostring(v4)
-    InputBox.ClearTextOnFocus = false
-
-    InputBox.FocusLost:Connect(function(enterPressed)
-        if enterPressed then
-            local newValue = tonumber(InputBox.Text)
-            
-            if newValue then
-                v4 = math.clamp(newValue, 0.01, 0.2)
-                print("Smoothness updated to:", v4)
-            else
-                InputBox.Text = tostring(v4)
-            end
-        end
-    end)
-
-    UserInputService.InputBegan:Connect(function(input, gameProcessed)
-        if gameProcessed then return end
-        
-        if input.UserInputType == v5 and not v7 then
-            v7 = true
-        end
-    end)
-
-    UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == v5 then
-            v7 = false
-        end
-    end)
-
-    updateAiming()
+    handleAimingInput()
 end
 
 Initiate()

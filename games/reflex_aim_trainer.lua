@@ -119,18 +119,18 @@ end
 local function Initiate()
     local success, err = pcall(function()
         if not Players or not UserInputService or not RunService or not TweenService or not Camera then
-            error("[ERROR] One or more required services are missing.")
+            error("[SEO] One or more required services are missing.")
         end
         if not LocalPlayer then
-            error("[ERROR] LocalPlayer is missing.")
+            error("[SEO] LocalPlayer is missing.")
         end
         if not workspace:FindFirstChild("Targets") then
-            error("[ERROR] 'Targets' folder is missing in workspace.")
+            error("[SEO] 'Targets' folder is missing in workspace.")
         end
     end)
 
     if not success then
-        warn("[AIMBOT ERROR]:", err)
+        warn("[SEO ERROR]:", err)
         return
     end
 

@@ -256,11 +256,6 @@ HandleSEO = function(scriptPath: string): nil
         end
 
         local func, loadErr = loadstring(scriptCode)
-        
-        if not func then
-            return false, "[SEO] loadstring failed for script: " .. scriptPath .. " | Error: " .. tostring(loadErr)
-        end
-    
         local success, runError = pcall(func)
         
         if success then

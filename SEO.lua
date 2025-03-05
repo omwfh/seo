@@ -143,7 +143,7 @@ FetchGameDetails = function(): (string, string)
     local success = false
 
     if not success then
-        warn("[SEO] Debug: Trying game-specific script:", "games/" .. placeName .. ".lua")
+        print("[SEO] Attempting to Fetch:", "games/" .. placeName .. ".lua")
         success = Importer.Import("games/" .. placeName .. ".lua")
 
         if success then

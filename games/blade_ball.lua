@@ -14,22 +14,42 @@ local lastPressTime: { [Instance]: number } = {}
 local isKeyPressed: { [Instance]: boolean } = {}
 
 local configHighPing: { value1: number, value2: number, value3: number, value4: number } = {
-	value1 = 0.106,
-	value2 = 0.0063,
-	value3 = 0.0108,
-	value4 = 0.3
+    value1 = 0.106,
+    value2 = 0.0063,
+    value3 = 0.0108,
+    value4 = 0.3
 }
 
 local configLowPing: { value1: number, value2: number, value3: number, value4: number } = {
-	value1 = 0.107,
-	value2 = 0.006,
-	value3 = 0.013,
-	value4 = 0.27
+    value1 = 0.106,
+    value2 = 0.0059,
+    value3 = 0.013,
+    value4 = 0.27
 }
 
 local currentConfig = nil
 local lastConfigUpdate = tick()
 local configUpdateInterval = .2
+
+local function GetBallVelocity(ball: BasePart): Vector3?
+    if not ball then return nil end
+
+    local success, velocity = pcall(function()
+        return ball.AssemblyLinearVelocity
+    end)
+    
+    if success and typeof(velocity) == "Vector3" then
+        return velocity
+    end
+
+    local zoomies: Vector3Value? = ball:FindFirstChild("zoomies")
+    
+    if zoomies and zoomies:IsA("Vector3Value") then
+        return zoomies.Value
+    end
+
+    return ball.Velocity
+end
 
 local function printValues()
     print("Current Config:")
@@ -69,7 +89,7 @@ end)()
 
 local function resolveVelocity(ball, ping)
     local currentPosition = ball.Position
-    local currentVelocity = ball.Velocity
+    local currentVelocity = GetBallVelocity(ball)
     local rtt = ping / 1000
     local predictedPosition = currentPosition + currentVelocity * rtt
     return predictedPosition
@@ -81,10 +101,10 @@ local function calculatePredictionTime(ball, player)
     if rootPart then
         local ping = getPlayerPing()
         updateConfigBasedOnPing(ping)
-       
+        
         local predictedPosition = resolveVelocity(ball, ping)
         local relativePosition = predictedPosition - rootPart.Position
-        local velocity = ball.Velocity + rootPart.Velocity
+        local velocity = GetBallVelocity(ball) + rootPart.Velocity
         local a = ball.Size.magnitude / 2
         local b = relativePosition.magnitude
         local c = math.sqrt(a * a + b * b)
@@ -106,7 +126,7 @@ local function calculateThreshold(ball, player)
     local pingCompensation = ping * 1.78
     local baseThreshold = currentConfig.value1 + pingCompensation
 
-    local velocityFactor = math.pow(ball.Velocity.magnitude, 1.3) * currentConfig.value2
+    local velocityFactor = math.pow(GetBallVelocity(ball).magnitude, 1.3) * currentConfig.value2
     local distanceFactor = distance * currentConfig.value3
 
     return math.max(baseThreshold, currentConfig.value4 - velocityFactor - distanceFactor)

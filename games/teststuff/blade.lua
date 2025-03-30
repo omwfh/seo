@@ -10,11 +10,13 @@ local ballFolder: Folder = Workspace:WaitForChild("Balls")
 local trainingFolder: Folder = Workspace:WaitForChild("TrainingBalls")
 
 local pressCooldown: number = 0
-local ThresholdFloor: number = 0.14
+local ThresholdFloor: number = 0.085
 
 local lastPressTime: { [Instance]: number } = {}
 local isKeyPressed: { [Instance]: boolean } = {}
 local previousVelocities: { [Instance]: Vector3 } = {}
+local recentlyParried: { [string]: number } = {}
+local parryCooldown: number = 0
 
 local PingTracker: {
     samples: { number },
@@ -40,7 +42,7 @@ local configHighPing: { value1: number, value2: number, value3: number, value4: 
 local configLowPing: { value1: number, value2: number, value3: number, value4: number } = {
     value1 = 0.11,
     value2 = 0.006,
-    value3 = 0.0109,
+    value3 = 0.0108,
     value4 = 0.27
 }
 
@@ -127,6 +129,16 @@ function PingTracker:IsActiveSpike()
     return (tick() - self.lastSpikeTime) <= 0.5
 end
 
+playerHasHighlight = function(player: Player): boolean
+    local aliveFolder = Workspace:FindFirstChild("Alive")
+    if not aliveFolder then return false end
+
+    local model = aliveFolder:FindFirstChild(player.Name)
+    if not model or not model:IsA("Model") then return false end
+
+    return model:FindFirstChildOfClass("Highlight") ~= nil
+end
+
 updateConfigBasedOnPing = function(ping)
     if tick() - lastConfigUpdate > configUpdateInterval then
         PingTracker:CheckSpike(ping)
@@ -157,7 +169,7 @@ resolveVelocity = function(ball, ping)
     local currentVelocity = GetBallVelocity(ball)
 
     local lastVel = previousVelocities[ball] or currentVelocity
-    local smoothedVelocity = lastVel:Lerp(currentVelocity, 0.45)
+    local smoothedVelocity = lastVel:Lerp(currentVelocity, 0.88)
 
     previousVelocities[ball] = currentVelocity
 
@@ -194,17 +206,22 @@ calculateThreshold = function(ball, player)
     updateConfigBasedOnPing(ping * 1000)
     
     local distance = (ball.Position - rootPart.Position).Magnitude
-
     local pingCompensation = ping * 1.78
     local baseThreshold = currentConfig.value1 + pingCompensation
-
     local velocityMagnitude = GetBallVelocity(ball).magnitude
     local velocityFactor = math.pow(velocityMagnitude, 1.25) * currentConfig.value2
     local distanceFactor = math.pow(distance, 0.8) * currentConfig.value3
+    local dynamicMaxClamp = currentConfig.value4
 
-    local finalThreshold = math.max(baseThreshold, currentConfig.value4 - velocityFactor - distanceFactor)
+    if distance > 50 then
+        dynamicMaxClamp = dynamicMaxClamp + 0.02
+    elseif distance < 15 then
+        dynamicMaxClamp = dynamicMaxClamp - 0.015
+    end
 
-    if distance > 65 then
+    local finalThreshold = math.max(baseThreshold, dynamicMaxClamp - velocityFactor - distanceFactor)
+
+    if distance > 45 then
         finalThreshold = math.max(finalThreshold, ThresholdFloor)
     end
 
@@ -214,6 +231,30 @@ end
 checkProximityToPlayer = function(ball, player)
     local rootPart = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
     if not rootPart then return end
+
+    if not playerHasHighlight(player) then
+        return
+    end
+
+    local ballId = tostring(ball:GetDebugId())
+
+    for id, time in pairs(recentlyParried) do
+        if tick() - time > 1.5 then
+            recentlyParried[id] = nil
+        end
+    end
+
+    if recentlyParried[ballId] and tick() - recentlyParried[ballId] < parryCooldown then
+        return
+    end
+
+    local ballDirection = GetBallVelocity(ball).Unit
+    
+    local toPlayer = (rootPart.Position - ball.Position).Unit
+    
+    if ballDirection:Dot(toPlayer) < 0.5 then
+        return
+    end
 
     local predictionTime = calculatePredictionTime(ball, player)
     local realBallAttribute = ball:GetAttribute("realBall")
@@ -226,6 +267,7 @@ checkProximityToPlayer = function(ball, player)
 
         lastPressTime[ball] = tick()
         isKeyPressed[ball] = true
+        recentlyParried[ballId] = tick()
     elseif lastPressTime[ball] and (predictionTime > ballSpeedThreshold or not realBallAttribute or target ~= player.Name) then
         isKeyPressed[ball] = false
     end
@@ -262,4 +304,4 @@ checkBallsProximity = function()
 end
 
 printValues()
-unService.Heartbeat:Connect(checkBallsProximity)
+RunService.Heartbeat:Connect(checkBallsProximity)

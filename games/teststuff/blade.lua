@@ -35,15 +35,15 @@ local PingTracker: {
 local configHighPing: { value1: number, value2: number, value3: number, value4: number } = {
     value1 = 0.108,
     value2 = 0.0069,
-    value3 = 0.0109,
-    value4 = 0.31
+    value3 = 0.0108,
+    value4 = 0.33
 }
 
 local configLowPing: { value1: number, value2: number, value3: number, value4: number } = {
     value1 = 0.11,
-    value2 = 0.0057,
-    value3 = 0.0105,
-    value4 = 0.29
+    value2 = 0.006,
+    value3 = 0.0108,
+    value4 = 0.27
 }
 
 local currentConfig = nil
@@ -219,11 +219,7 @@ calculateThreshold = function(ball, player)
         dynamicMaxClamp = dynamicMaxClamp - 0.015
     end
 
-    local finalThreshold = math.max(baseThreshold, dynamicMaxClamp - velocityFactor - distanceFactor)
-
-    if distance > 45 then
-        finalThreshold = math.max(finalThreshold, ThresholdFloor)
-    end
+    local finalThreshold = math.max(baseThreshold, math.max(dynamicMaxClamp - velocityFactor - distanceFactor, ThresholdFloor))
 
     return finalThreshold
 end
@@ -237,9 +233,8 @@ checkProximityToPlayer = function(ball, player)
     end
 
     local ballId = tostring(ball:GetDebugId())
-
     for id, time in pairs(recentlyParried) do
-        if tick() - time > 1.5 then
+        if tick() - time > 0.5 then
             recentlyParried[id] = nil
         end
     end
@@ -249,9 +244,7 @@ checkProximityToPlayer = function(ball, player)
     end
 
     local ballDirection = GetBallVelocity(ball).Unit
-    
     local toPlayer = (rootPart.Position - ball.Position).Unit
-    
     if ballDirection:Dot(toPlayer) < 0.5 then
         return
     end

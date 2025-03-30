@@ -35,15 +35,15 @@ local PingTracker: {
 local configHighPing: { value1: number, value2: number, value3: number, value4: number } = {
     value1 = 0.108,
     value2 = 0.0069,
-    value3 = 0.0108,
-    value4 = 0.33
+    value3 = 0.0109,
+    value4 = 0.31
 }
 
 local configLowPing: { value1: number, value2: number, value3: number, value4: number } = {
     value1 = 0.11,
-    value2 = 0.006,
-    value3 = 0.0108,
-    value4 = 0.27
+    value2 = 0.0057,
+    value3 = 0.0105,
+    value4 = 0.29
 }
 
 local currentConfig = nil

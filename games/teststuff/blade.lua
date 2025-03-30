@@ -15,8 +15,6 @@ local ThresholdFloor: number = 0.085
 local lastPressTime: { [Instance]: number } = {}
 local isKeyPressed: { [Instance]: boolean } = {}
 local previousVelocities: { [Instance]: Vector3 } = {}
-local recentlyParried: { [string]: number } = {}
-local parryCooldown: number = 0
 
 local PingTracker: {
     samples: { number },
@@ -204,24 +202,17 @@ calculateThreshold = function(ball, player)
 
     local ping = getPlayerPing() / 1000
     updateConfigBasedOnPing(ping * 1000)
-    
+    local ballVelocity = GetBallVelocity(ball).magnitude
     local distance = (ball.Position - rootPart.Position).Magnitude
-    local pingCompensation = ping * 1.78
+
+    local pingCompensation = ping * 1.76
+    local velocityFactor = math.pow(ballVelocity, 1.28) * currentConfig.value2
+    local distanceFactor = distance * currentConfig.value3
+
     local baseThreshold = currentConfig.value1 + pingCompensation
-    local velocityMagnitude = GetBallVelocity(ball).magnitude
-    local velocityFactor = math.pow(velocityMagnitude, 1.25) * currentConfig.value2
-    local distanceFactor = math.pow(distance, 0.8) * currentConfig.value3
-    local dynamicMaxClamp = currentConfig.value4
+    local totalPenalty = velocityFactor + distanceFactor
 
-    if distance > 50 then
-        dynamicMaxClamp = dynamicMaxClamp + 0.02
-    elseif distance < 15 then
-        dynamicMaxClamp = dynamicMaxClamp - 0.015
-    end
-
-    local finalThreshold = math.max(baseThreshold, math.max(dynamicMaxClamp - velocityFactor - distanceFactor, ThresholdFloor))
-
-    return finalThreshold
+    return math.max(baseThreshold, currentConfig.value4 - totalPenalty)
 end
 
 checkProximityToPlayer = function(ball, player)
@@ -233,19 +224,9 @@ checkProximityToPlayer = function(ball, player)
     end
 
     local ballId = tostring(ball:GetDebugId())
-    for id, time in pairs(recentlyParried) do
-        if tick() - time > 0.5 then
-            recentlyParried[id] = nil
-        end
-    end
-
-    if recentlyParried[ballId] and tick() - recentlyParried[ballId] < parryCooldown then
-        return
-    end
-
     local ballDirection = GetBallVelocity(ball).Unit
     local toPlayer = (rootPart.Position - ball.Position).Unit
-    if ballDirection:Dot(toPlayer) < 0.5 then
+    if ballDirection:Dot(toPlayer) < 0.85 then
         return
     end
 
@@ -260,7 +241,6 @@ checkProximityToPlayer = function(ball, player)
 
         lastPressTime[ball] = tick()
         isKeyPressed[ball] = true
-        recentlyParried[ballId] = tick()
     elseif lastPressTime[ball] and (predictionTime > ballSpeedThreshold or not realBallAttribute or target ~= player.Name) then
         isKeyPressed[ball] = false
     end

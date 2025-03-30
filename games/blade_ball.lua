@@ -16,15 +16,15 @@ local isKeyPressed: { [Instance]: boolean } = {}
 local configHighPing: { value1: number, value2: number, value3: number, value4: number } = {
     value1 = 0.106,
     value2 = 0.0063,
-    value3 = 0.0106,
+    value3 = 0.0109,
     value4 = 0.31
 }
 
 local configLowPing: { value1: number, value2: number, value3: number, value4: number } = {
-    value1 = 0.105,
-    value2 = 0.0057,
-    value3 = 0.0109,
-    value4 = 0.27
+    value1 = 0.107,
+    value2 = 0.006,
+    value3 = 0.0108,
+    value4 = 0.28
 }
 
 local currentConfig = nil
@@ -125,10 +125,10 @@ local function calculateThreshold(ball, player)
     updateConfigBasedOnPing(ping * 1000)
     local distance = (ball.Position - rootPart.Position).Magnitude
 
-    local pingCompensation = ping * 1.72
+    local pingCompensation = ping * 1.78
     local baseThreshold = currentConfig.value1 + pingCompensation
 
-    local velocityFactor = math.pow(GetBallVelocity(ball).magnitude, 1.2) * currentConfig.value2
+    local velocityFactor = math.pow(GetBallVelocity(ball).magnitude, 1.35) * currentConfig.value2
     local distanceFactor = distance * currentConfig.value3
 
     return math.max(baseThreshold, currentConfig.value4 - velocityFactor - distanceFactor)

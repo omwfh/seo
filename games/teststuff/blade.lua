@@ -124,7 +124,7 @@ function PingTracker:CheckSpike(currentPing)
 end
 
 function PingTracker:IsActiveSpike()
-    return (tick() - self.lastSpikeTime) <= 0.5
+    return (tick() - self.lastSpikeTime) <= 1.35
 end
 
 playerHasHighlight = function(player: Player): boolean
@@ -167,7 +167,7 @@ resolveVelocity = function(ball, ping)
     local currentVelocity = GetBallVelocity(ball)
 
     local lastVel = previousVelocities[ball] or currentVelocity
-    local smoothedVelocity = lastVel:Lerp(currentVelocity, 0.88)
+    local smoothedVelocity = lastVel:Lerp(currentVelocity, 0.58)
 
     previousVelocities[ball] = currentVelocity
 
@@ -190,7 +190,7 @@ calculatePredictionTime = function(ball, player)
         local totalVelocity = (GetBallVelocity(ball) + rootPart.Velocity).magnitude
         local distance = relativePosition.Magnitude
 
-        return distance / math.max(totalVelocity, 28)
+        return distance / math.max(totalVelocity, 38)
     end
 
     return math.huge

@@ -31,16 +31,16 @@ local PingTracker: {
 }
 
 local configHighPing: { value1: number, value2: number, value3: number, value4: number } = {
-    value1 = 0.104,
-    value2 = 0.0065,
-    value3 = 0.0106,
-    value4 = 0.31
+    value1 = 0.108,
+    value2 = 0.0069,
+    value3 = 0.0108,
+    value4 = 0.33
 }
 
 local configLowPing: { value1: number, value2: number, value3: number, value4: number } = {
-    value1 = 0.104,
-    value2 = 0.0057,
-    value3 = 0.011,
+    value1 = 0.11,
+    value2 = 0.006,
+    value3 = 0.0109,
     value4 = 0.27
 }
 
@@ -192,6 +192,7 @@ calculateThreshold = function(ball, player)
 
     local ping = getPlayerPing() / 1000
     updateConfigBasedOnPing(ping * 1000)
+    
     local distance = (ball.Position - rootPart.Position).Magnitude
 
     local pingCompensation = ping * 1.78
@@ -228,15 +229,6 @@ checkProximityToPlayer = function(ball, player)
     elseif lastPressTime[ball] and (predictionTime > ballSpeedThreshold or not realBallAttribute or target ~= player.Name) then
         isKeyPressed[ball] = false
     end
-
-    local distanceToPlayer = (ball.Position - rootPart.Position).Magnitude
-    if distanceToPlayer < 10 and not isKeyPressed[ball] and (not lastPressTime[ball] or tick() - lastPressTime[ball] > pressCooldown) then
-        Vim:SendKeyEvent(true, Enum.KeyCode.F, false, nil)
-        Vim:SendKeyEvent(false, Enum.KeyCode.F, false, nil)
-
-        lastPressTime[ball] = tick()
-        isKeyPressed[ball] = true
-    end
 end
 
 getAllBalls = function()
@@ -253,6 +245,7 @@ getAllBalls = function()
             end
         end
     end
+    
     return allBalls
 end
 
@@ -269,4 +262,4 @@ checkBallsProximity = function()
 end
 
 printValues()
-RunService.Heartbeat:Connect(checkBallsProximity)
+unService.Heartbeat:Connect(checkBallsProximity)

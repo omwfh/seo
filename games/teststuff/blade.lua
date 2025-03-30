@@ -31,16 +31,16 @@ local PingTracker: {
 }
 
 local configHighPing: { value1: number, value2: number, value3: number, value4: number } = {
-    value1 = 0.108,
+    value1 = 0.107,
     value2 = 0.0069,
     value3 = 0.0108,
-    value4 = 0.33
+    value4 = 0.31
 }
 
 local configLowPing: { value1: number, value2: number, value3: number, value4: number } = {
-    value1 = 0.11,
-    value2 = 0.006,
-    value3 = 0.0108,
+    value1 = 0.105,
+    value2 = 0.0058,
+    value3 = 0.0105,
     value4 = 0.27
 }
 

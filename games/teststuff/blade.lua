@@ -10,7 +10,7 @@ local ballFolder: Folder = Workspace:WaitForChild("Balls")
 local trainingFolder: Folder = Workspace:WaitForChild("TrainingBalls")
 
 local pressCooldown: number = 0
-local ThresholdFloor: number = 0.085
+local ThresholdFloor: number = 0.063
 
 local lastPressTime: { [Instance]: number } = {}
 local isKeyPressed: { [Instance]: boolean } = {}
@@ -167,7 +167,7 @@ resolveVelocity = function(ball, ping)
     local currentVelocity = GetBallVelocity(ball)
 
     local lastVel = previousVelocities[ball] or currentVelocity
-    local smoothedVelocity = lastVel:Lerp(currentVelocity, 0.58)
+    local smoothedVelocity = lastVel:Lerp(currentVelocity, 0.53)
 
     previousVelocities[ball] = currentVelocity
 

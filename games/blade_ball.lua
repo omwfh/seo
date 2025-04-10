@@ -14,17 +14,17 @@ local lastPressTime: { [Instance]: number } = {}
 local isKeyPressed: { [Instance]: boolean } = {}
 
 local configHighPing: { value1: number, value2: number, value3: number, value4: number } = {
-    value1 = 0.106,
-    value2 = 0.0063,
+    value1 = 0.108,
+    value2 = 0.0066,
     value3 = 0.0108,
     value4 = 0.31
 }
 
 local configLowPing: { value1: number, value2: number, value3: number, value4: number } = {
     value1 = 0.106,
-    value2 = 0.0055,
+    value2 = 0.0058,
     value3 = 0.011,
-    value4 = 0.29
+    value4 = 0.27
 }
 
 local currentConfig = nil

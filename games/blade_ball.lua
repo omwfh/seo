@@ -22,9 +22,9 @@ local configHighPing: { value1: number, value2: number, value3: number, value4: 
 
 local configLowPing: { value1: number, value2: number, value3: number, value4: number } = {
     value1 = 0.106,
-    value2 = 0.0058,
-    value3 = 0.011,
-    value4 = 0.27
+    value2 = 0.006,
+    value3 = 0.012,
+    value4 = 0.29
 }
 
 local currentConfig = nil

@@ -430,15 +430,9 @@ LocalPlayer.Chatted:Connect(function(message: string)
 	end
 
     if lowered == "car" then
-        local carsFolder: Folder? = Workspace:FindFirstChild("Cars")
-        if not carsFolder then
-            warn("cars folder not found")
-            return
-        end
-
         local firstCar: Model? = nil
 
-        for _, child in ipairs(carsFolder:GetChildren()) do
+        for _, child in ipairs(CurrentCar:GetChildren()) do
             if child:IsA("Model") then
                 firstCar = child
                 break
@@ -464,6 +458,7 @@ LocalPlayer.Chatted:Connect(function(message: string)
         if not root then return end
 
         root.CFrame = seat.CFrame * CFrame.new(0, 3, 0)
+        
         return
     end
 

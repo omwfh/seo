@@ -2,12 +2,6 @@ if not game:IsLoaded() then
     game.Loaded:Wait() 
 end
 
-local function sendNotif(text)
-    game:GetService("StarterGui"):SetCore("SendNotification",{
-        Text = text
-    })
-end
-
 local Players: Players = game:GetService("Players")
 local Workspace: Workspace = game:GetService("Workspace")
 local RunService: RunService = game:GetService("RunService")
@@ -452,7 +446,7 @@ LocalPlayer.Chatted:Connect(function(message: string)
         local target: Player? = GetPlayerByDisplayName(targetName)
         if not target then return end
 
-        sendNotif("target:", target) --// debug
+        print("target:", target) --// debug
 
         local tycoon: Model? = GetTycoonFromPlayer(target)
         if not tycoon then return end
@@ -507,6 +501,7 @@ LocalPlayer.Chatted:Connect(function(message: string)
 
         local character = LocalPlayer.Character
         if not character then return end
+
         local tool: Tool? = character:FindFirstChildWhichIsA("Tool")
         if not tool then return end
 
@@ -543,7 +538,7 @@ LocalPlayer.Chatted:Connect(function(message: string)
                     end
 
                     if allDead then
-                        sendNotif("all dead")
+                        print("all dead")
                         break
                     end
 
@@ -573,7 +568,7 @@ LocalPlayer.Chatted:Connect(function(message: string)
 
             local currentHumanoid = currentChar:FindFirstChildWhichIsA("Humanoid")
             if not currentHumanoid or currentHumanoid.Health <= 0 then
-                sendNotif("player dead")
+                print("player dead")
                 break
             end
 
@@ -603,14 +598,14 @@ LocalPlayer.Chatted:Connect(function(message: string)
             return
         end
 
-        sendNotif("found tycoon:", tycoon and tycoon.Name)
+        print("found tycoon:", tycoon and tycoon.Name)
 
         local npcStuff = tycoon:FindFirstChild("NpcStuff")
         if not npcStuff then return end
         local activeFolder = npcStuff:FindFirstChild("ActiveNpcs")
         if not activeFolder then return end
 
-        sendNotif("clearing enemies...")
+        print("clearing enemies...")
 
         task.spawn(function()
             while task.wait(0.1) do
@@ -621,7 +616,7 @@ LocalPlayer.Chatted:Connect(function(message: string)
                 if not tool then break end
 
                 if #activeFolder:GetChildren() == 0 then
-                    sendNotif("no active npc")
+                    print("no active npc")
                     break
                 end
 
@@ -644,7 +639,7 @@ LocalPlayer.Chatted:Connect(function(message: string)
                 end
 
                 if allDead then
-                    sendNotif("cleared")
+                    print("cleared")
                     break
                 end
             end

@@ -587,4 +587,64 @@ LocalPlayer.Chatted:Connect(function(message: string)
 
         return
     end
+
+    if lowered:sub(1, 6) == "clear " then
+        local targetName: string = content:sub(7)
+        local target: Player? = GetPlayerByDisplayName(targetName)
+        if not target then return end
+
+        local tycoon: Model? = GetTycoonFromPlayer(target)
+        if not tycoon then
+            warn("no tycoon found")
+            return
+        end
+
+        print("found tycoon:", tycoon and tycoon.Name)
+
+        local npcStuff = tycoon:FindFirstChild("NpcStuff")
+        if not npcStuff then return end
+        
+        local activeFolder = npcStuff:FindFirstChild("ActiveNpcs")
+        if not activeFolder then return end
+
+        task.spawn(function()
+            while task.wait(0.1) do
+                local character = LocalPlayer.Character
+                if not character then break end
+
+                local tool: Tool? = character:FindFirstChildWhichIsA("Tool")
+                if not tool then break end
+
+                if #activeFolder:GetChildren() == 0 then
+                    print("no active npc")
+                    break
+                end
+
+                local allDead = true
+
+                for _, npc: Model in ipairs(activeFolder:GetChildren()) do
+                    local humanoid, head = getValidTarget(npc)
+
+                    if humanoid and head then
+                        allDead = false
+
+                        GunFire:FireServer(
+                            tool.Name,
+                            tool,
+                            head.Position,
+                            head.Position,
+                            head
+                        )
+                    end
+                end
+
+                if allDead then
+                    print("cleared")
+                    break
+                end
+            end
+        end)
+
+        return
+    end
 end)

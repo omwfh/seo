@@ -2,6 +2,12 @@ if not game:IsLoaded() then
     game.Loaded:Wait() 
 end
 
+local function sendNotif(text)
+    game:GetService("StarterGui"):SetCore("SendNotification",{
+        Text = text
+    })
+end
+
 local Players: Players = game:GetService("Players")
 local Workspace: Workspace = game:GetService("Workspace")
 local RunService: RunService = game:GetService("RunService")
@@ -276,8 +282,7 @@ local function GetClosestTarget(): BasePart?
 	local closestMagnitude: number = maxDistance
 	
     local mouseLocation: Vector2 = UserInputService:GetMouseLocation()
-
-	local bestHead: BasePart? = nil
+	local chosenHead: BasePart? = nil
 
 	for _, player: Player in ipairs(Players:GetPlayers()) do
 		if player == LocalPlayer then continue end
@@ -300,11 +305,11 @@ local function GetClosestTarget(): BasePart?
 
 		if magnitude < closestMagnitude then
 			closestMagnitude = magnitude
-			bestHead = head
+			chosenHead = head
 		end
 	end
 
-	return bestHead
+	return chosenHead
 end
 
 local function SetCharacterCollision(character: Model, state: boolean)
@@ -344,17 +349,17 @@ local function FireAtPlayers(tool: Tool)
 		return
 	end
 
-	local bestHead = GetClosestTarget()
-	if not bestHead then
+	local chosenHead = GetClosestTarget()
+	if not chosenHead then
 		return
 	end
 
 	GunFire:FireServer(
 		tool.Name,
 		tool,
-		bestHead.Position,
-		bestHead.Position,
-		bestHead
+		chosenHead.Position,
+		chosenHead.Position,
+		chosenHead
 	)
 end
 
@@ -447,7 +452,7 @@ LocalPlayer.Chatted:Connect(function(message: string)
         local target: Player? = GetPlayerByDisplayName(targetName)
         if not target then return end
 
-        print("target:", target) --// debug
+        sendNotif("target:", target) --// debug
 
         local tycoon: Model? = GetTycoonFromPlayer(target)
         if not tycoon then return end
@@ -502,7 +507,6 @@ LocalPlayer.Chatted:Connect(function(message: string)
 
         local character = LocalPlayer.Character
         if not character then return end
-
         local tool: Tool? = character:FindFirstChildWhichIsA("Tool")
         if not tool then return end
 
@@ -539,7 +543,7 @@ LocalPlayer.Chatted:Connect(function(message: string)
                     end
 
                     if allDead then
-                        print("all dead")
+                        sendNotif("all dead")
                         break
                     end
 
@@ -569,7 +573,7 @@ LocalPlayer.Chatted:Connect(function(message: string)
 
             local currentHumanoid = currentChar:FindFirstChildWhichIsA("Humanoid")
             if not currentHumanoid or currentHumanoid.Health <= 0 then
-                print("player dead")
+                sendNotif("player dead")
                 break
             end
 
@@ -599,13 +603,14 @@ LocalPlayer.Chatted:Connect(function(message: string)
             return
         end
 
-        print("found tycoon:", tycoon and tycoon.Name)
+        sendNotif("found tycoon:", tycoon and tycoon.Name)
 
         local npcStuff = tycoon:FindFirstChild("NpcStuff")
         if not npcStuff then return end
-        
         local activeFolder = npcStuff:FindFirstChild("ActiveNpcs")
         if not activeFolder then return end
+
+        sendNotif("clearing enemies...")
 
         task.spawn(function()
             while task.wait(0.1) do
@@ -616,7 +621,7 @@ LocalPlayer.Chatted:Connect(function(message: string)
                 if not tool then break end
 
                 if #activeFolder:GetChildren() == 0 then
-                    print("no active npc")
+                    sendNotif("no active npc")
                     break
                 end
 
@@ -639,7 +644,7 @@ LocalPlayer.Chatted:Connect(function(message: string)
                 end
 
                 if allDead then
-                    print("cleared")
+                    sendNotif("cleared")
                     break
                 end
             end

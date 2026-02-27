@@ -62,6 +62,11 @@ local BoxesFolder: Folder = LocalTycoon:WaitForChild("Boxes"):WaitForChild("Full
 local TycoonFloor: BasePart = LocalTycoon
     :WaitForChild("TycoonFloor")
 
+local CurrentCar: BasePart = LocalTycoon
+    :WaitForChild("Buyables")
+    :WaitForChild("Cars")
+    :WaitForChild("CurrentCar")
+
 local Colorizer: BasePart = LocalTycoon
     :WaitForChild("Buyables")
     :WaitForChild("Upgraders")
@@ -417,6 +422,44 @@ LocalPlayer.Chatted:Connect(function(message: string)
 		root.CFrame = TycoonFloor.CFrame * CFrame.new(0, 5, 0)
 		return
 	end
+
+    if lowered == "car" then
+        local carsFolder: Folder? = Workspace:FindFirstChild("Cars")
+        if not carsFolder then
+            warn("cars folder not found")
+            return
+        end
+
+        local firstCar: Model? = nil
+
+        for _, child in ipairs(carsFolder:GetChildren()) do
+            if child:IsA("Model") then
+                firstCar = child
+                break
+            end
+        end
+
+        if not firstCar then
+            warn("no car model found")
+            return
+        end
+
+        local seat: VehicleSeat? = firstCar:FindFirstChildWhichIsA("VehicleSeat", true)
+        if not seat then
+            warn("no seat found in the car")
+            return
+        end
+
+        local character: Model? = LocalPlayer.Character
+        if not character then return end
+
+        local root: BasePart? =
+            character:FindFirstChild("HumanoidRootPart") :: BasePart?
+        if not root then return end
+
+        root.CFrame = seat.CFrame * CFrame.new(0, 3, 0)
+        return
+    end
 
     if lowered:sub(1, 3) == "tp " then
         local targetName: string = content:sub(4)

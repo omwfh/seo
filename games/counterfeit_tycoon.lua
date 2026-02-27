@@ -86,12 +86,19 @@ local ManualButton2: BasePart = LocalTycoon
     :WaitForChild("Dropper34")
     :WaitForChild("ButtonPart")
 
+local ManualButton3: BasePart = LocalTycoon
+    :WaitForChild("Buyables")
+    :WaitForChild("Droppers")
+    :WaitForChild("Dropper33")
+    :WaitForChild("ButtonPart")
+
 local DropoffPart: BasePart = BoxDropoffs
     :WaitForChild("Dropoff1")
     :WaitForChild("PayPart")
 
 local ClickDetector1: ClickDetector = ManualButton:WaitForChild("ClickDetector")
 local ClickDetector2: ClickDetector = ManualButton2:WaitForChild("ClickDetector")
+local ClickDetector3: ClickDetector = ManualButton3:WaitForChild("ClickDetector")
 
 local IsHoldingMouse: boolean = false
 local Processed: {[Instance]: boolean} = {}
@@ -174,6 +181,7 @@ local function processBox(Box: Instance)
 
     fireclickdetector(ClickDetector1)
     fireclickdetector(ClickDetector2)
+    fireclickdetector(ClickDetector3)
 
     local BoxModel: Model? = Box:FindFirstChild("BoxModel")
     if not BoxModel then return end
@@ -439,7 +447,7 @@ LocalPlayer.Chatted:Connect(function(message: string)
         local target: Player? = GetPlayerByDisplayName(targetName)
         if not target then return end
 
-        print("Target:", target)
+        print("target:", target) --// debug
 
         local tycoon: Model? = GetTycoonFromPlayer(target)
         if not tycoon then return end
@@ -487,4 +495,96 @@ LocalPlayer.Chatted:Connect(function(message: string)
         end
 		return
 	end
+
+    if lowered:sub(1, 5) == "kill " then
+        local argument: string = string.lower(content:sub(6))
+        local Dead: boolean = true
+
+        local character = LocalPlayer.Character
+        if not character then return end
+
+        local tool: Tool? = character:FindFirstChildWhichIsA("Tool")
+        if not tool then return end
+
+        if argument == "all" then
+            task.spawn(function()
+                while true do
+                    local allDead: boolean = true
+
+                    for _, player: Player in ipairs(Players:GetPlayers()) do
+                        if player == LocalPlayer then
+                            continue
+                        end
+
+                        local targetChar: Model? = player.Character
+                        if not targetChar then
+                            continue
+                        end
+
+                        local humanoid: Humanoid? = targetChar:FindFirstChildWhichIsA("Humanoid")
+                        if humanoid and humanoid.Health > 0 then
+                            allDead = false
+
+                            local head: BasePart? = targetChar:FindFirstChild("Head")
+                            if head then
+                                GunFire:FireServer(
+                                    tool.Name,
+                                    tool,
+                                    head.Position,
+                                    head.Position,
+                                    head
+                                )
+                            end
+                        end
+                    end
+
+                    if allDead then
+                        print("all dead")
+                        break
+                    end
+
+                    task.wait(0.1)
+                end
+            end)
+
+            return
+        end
+
+        local target: Player? = GetPlayerByDisplayName(argument)
+        if not target then return end
+        if target == LocalPlayer then return end
+
+        local targetChar = target.Character
+        if not targetChar then return end
+
+        local humanoid = targetChar:FindFirstChildWhichIsA("Humanoid")
+        if not humanoid or humanoid.Health <= 0 then return end
+
+        local head = targetChar:FindFirstChild("Head")
+        if not head then return end
+
+        while task.wait(0.1) do
+            local currentChar = target.Character
+            if not currentChar then break end
+
+            local currentHumanoid = currentChar:FindFirstChildWhichIsA("Humanoid")
+            if not currentHumanoid or currentHumanoid.Health <= 0 then
+                print("player dead")
+                break
+            end
+
+            local head = currentChar:FindFirstChild("Head")
+            if head then
+                GunFire:FireServer(
+                    tool.Name,
+                    tool,
+                    head.Position,
+                    head.Position,
+                    head
+                )
+            end
+        end
+
+        return
+    end
 end)

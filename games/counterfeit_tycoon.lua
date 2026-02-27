@@ -2,6 +2,10 @@ if not game:IsLoaded() then
     game.Loaded:Wait() 
 end
 
+if _G.FOVCircle then
+    _G.FOVCircle:Remove()
+end
+
 local Players: Players = game:GetService("Players")
 local Workspace: Workspace = game:GetService("Workspace")
 local RunService: RunService = game:GetService("RunService")
@@ -28,8 +32,9 @@ local LocalTycoon: Model? = nil
 
 _G.AimbotEnabled = true
 _G.TeamCheck = false
+_G.FOVCircle = Drawing.new("Circle")
 
-local FOVCircle = Drawing.new("Circle")
+local FOVCircle = _G.FOVCircle
 FOVCircle.Filled = false
 FOVCircle.Color = Color3.fromRGB(255, 255, 255)
 FOVCircle.Visible = true
@@ -37,6 +42,7 @@ FOVCircle.Radius = 80
 FOVCircle.Transparency = 1
 FOVCircle.NumSides = 100
 FOVCircle.Thickness = 0
+FOVCircle.Position = UserInputService:GetMouseLocation()
 
 local FOVVisible: boolean = true
 
@@ -688,6 +694,47 @@ LocalPlayer.Chatted:Connect(function(message: string)
             end
         end)
 
+        return
+    end
+
+    if lowered:sub(1, 4) == "vel " then
+        local velocityMult = tonumber(content:sub(5))
+        if not velocityMult then
+            warn("invalid velocity multiplier")
+            return
+        end
+
+        task.spawn(function()
+            while task.wait(0.1) do
+                local character = LocalPlayer.Character
+                if not character then break end
+
+                local humanoid = character:FindFirstChildWhichIsA("Humanoid")
+                if not humanoid then break end
+
+                local seat = humanoid.SeatPart
+                if not seat or not seat:IsA("VehicleSeat") then break end
+
+                if not seat:GetAttribute("VelocityBoosted") then
+                    break
+                end
+
+                local vel = seat.AssemblyLinearVelocity
+
+                seat.AssemblyLinearVelocity =
+                    vel * Vector3.new(1 + velocityMult, 1, 1 + velocityMult)
+            end
+        end)
+
+        local character = LocalPlayer.Character
+        if character then
+            local humanoid = character:FindFirstChildWhichIsA("Humanoid")
+            if humanoid and humanoid.SeatPart and humanoid.SeatPart:IsA("VehicleSeat") then
+                humanoid.SeatPart:SetAttribute("VelocityBoosted", true)
+            end
+        end
+
+        print("velocity boost active:", velocityMult)
         return
     end
 end)
